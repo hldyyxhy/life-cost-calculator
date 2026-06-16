@@ -1,0 +1,217 @@
+# -*- coding: utf-8 -*-
+"""
+page_profile.py —— 我的档案
+
+把"我是谁、挣多少、怎么活、养谁、欠多少"集中成一份档案：
+    - 按 6 组细致字段渲染表单（控件类型见 profile.FIELD_DEFS）
+    - 保存档案：导出为 JSON 文件（可选落盘）
+    - 加载档案：从 JSON 文件导入
+    - 新建：清空回默认值
+
+本轮档案先独立存在；处境/对比/三座山如何读取后续再接。
+"""
+
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+
+import profile as P
+import gui_widgets as W
+import report as R
+
+
+class ProfilePage(ttk.Frame):
+    def __init__(self, parent, app=None):
+        super().__init__(parent)
+        self.app = app   # 用于把档案同步到其他模块
+        self._vars = {}   # 字段名 -> tk 变量
+        self._scroll = W.ScrollableFrame(self)
+        self._scroll.pack(fill="both", expand=True)
+        self._content = self._scroll.inner
+        self._build_toolbar()
+        self._build_form()
+        self._build_apply_bar()
+
+    # ---------- 顶部操作栏 ----------
+    def _build_toolbar(self):
+        bar = W.CardFrame(self._content, padding=8)
+        bar.pack(side="top", fill="x", padx=8, pady=(8, 4))
+
+        ttk.Label(bar, text="我的档案", style="Header.TLabel").pack(side="left")
+        ttk.Label(bar,
+                  text="（先独立填写保存；各计算模块后续会读取这份档案）",
+                  style="Sub.TLabel").pack(side="left", padx=10)
+
+        btns = ttk.Frame(bar)
+        btns.pack(side="right")
+        ttk.Button(btns, text="💾 保存档案", command=self.on_save).pack(side="left", padx=3)
+        ttk.Button(btns, text="📂 加载档案", command=self.on_load).pack(side="left", padx=3)
+        ttk.Button(btns, text="✚ 新建（清空）", command=self.on_reset).pack(side="left", padx=3)
+
+    # ---------- 表单 ----------
+    def _build_form(self):
+        for group, fields in P.FIELD_DEFS.items():
+            box = W.CardFrame(self._content, title=P.GROUP_TITLES[group], padding=10)
+            box.pack(side="top", fill="x", padx=8, pady=4)
+            box.columnconfigure(1, weight=1)
+            for row, (key, default, label, ctype, meta) in enumerate(fields):
+                self._render_field(box, row, key, default, label, ctype, meta)
+
+    # ---------- 底部确定栏：同步到其他模块 ----------
+    def _build_apply_bar(self):
+        bar = W.CardFrame(self._content, padding=10)
+        bar.pack(side="top", fill="x", padx=8, pady=(4, 6))
+        ttk.Label(bar, text="填完后点「确定」，自动同步到处境页、对比页、三座山，无需重复输入。",
+                  style="Sub.TLabel").pack(side="left")
+        ttk.Button(bar, text="✓  确定（同步到各模块）",
+                   command=self.on_apply).pack(side="right")
+
+        # 保存综合计算结果
+        bar2 = W.CardFrame(self._content, padding=10)
+        bar2.pack(side="top", fill="x", padx=8, pady=(0, 12))
+        ttk.Label(bar2, text="各模块都算完后，可生成一份含档案数据与分析建议的综合报告。",
+                  style="Sub.TLabel").pack(side="left")
+        ttk.Button(bar2, text="📄  保存个人计算结果",
+                   command=self.on_export_report).pack(side="right")
+
+    def on_apply(self):
+        """把档案推送到处境页、对比页、三座山页（各页 apply_profile 自取所需字段）。"""
+        prof = self.collect()
+        pages = self.app.pages if self.app else {}
+        targets = [("处境", "current"), ("对比", "compare"), ("三座山", "milestones")]
+        synced = []
+        for label, key in targets:
+            pg = pages.get(key)
+            if pg is not None and hasattr(pg, "apply_profile"):
+                try:
+                    pg.apply_profile(prof)
+                    synced.append(label)
+                except Exception as e:
+                    from tkinter import messagebox
+                    messagebox.showerror("同步失败", f"同步到【{label}】时出错：\n{e}")
+                    return
+        if synced:
+            from tkinter import messagebox
+            messagebox.showinfo("已同步", f"档案已同步到：{ '、'.join(synced) } 页。\n可去各页直接查看结果。")
+
+    def on_export_report(self):
+        """各模块都算完后，询问并保存一份含档案数据 + 各模块分析 + 综合建议的报告。"""
+        from tkinter import messagebox, filedialog
+        if not messagebox.askyesno(
+                "保存计算结果",
+                "是否保存个人计算结果？\n\n报告将包含：基本档案数据 + 各模块分析 + 综合建议。\n"
+                "（请先在各模块点过「算一算/开始对比」，否则对应段落会显示「未计算」）"):
+            return
+
+        prof = self.collect()
+        pages = self.app.pages if self.app else {}
+        cur = getattr(pages.get("current"), "_last_result", None)
+        cmp = getattr(pages.get("compare"), "_last_compare", None)
+        ms_page = pages.get("milestones")
+        ms = ms_page.get_report_section() if ms_page and hasattr(ms_page, "get_report_section") else {}
+
+        text = R.build_full_report(prof, cur, cmp, ms)
+
+        path = filedialog.asksaveasfilename(
+            title="保存个人计算结果",
+            defaultextension=".txt",
+            initialfile="个人计算结果.txt",
+            filetypes=[("文本文件", "*.txt"), ("所有文件", "*.*")])
+        if not path:
+            return
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(text)
+            messagebox.showinfo("已保存", f"个人计算结果已保存到：\n{path}")
+        except OSError as e:
+            messagebox.showerror("保存失败", str(e))
+
+    def _render_field(self, box, row, key, default, label, ctype, meta):
+        ttk.Label(box, text=f"{label}：").grid(
+            row=row, column=0, sticky="w", pady=3)
+
+        if ctype == "spin":
+            lo, hi = meta
+            var = tk.IntVar(value=default)
+            ttk.Spinbox(box, from_=lo, to=hi, textvariable=var,
+                        width=8).grid(row=row, column=1, sticky="w")
+        elif ctype == "entry":
+            var = tk.StringVar(value=default)
+            ttk.Entry(box, textvariable=var, width=14).grid(
+                row=row, column=1, sticky="w")
+            if meta:  # 提示文字
+                ttk.Label(box, text=meta, style="Sub.TLabel").grid(
+                    row=row, column=2, sticky="w", padx=8)
+        elif ctype == "combo":
+            var = tk.StringVar(value=default)
+            ttk.Combobox(box, textvariable=var, values=meta,
+                         state="readonly", width=16).grid(
+                row=row, column=1, sticky="w")
+        elif ctype == "check":
+            var = tk.BooleanVar(value=default)
+            ttk.Checkbutton(box, variable=var).grid(
+                row=row, column=1, sticky="w")
+        else:
+            var = None
+        self._vars[key] = var
+
+    # ---------- 收集 / 回填 ----------
+    def collect(self):
+        """从控件收集成档案 dict（entry 的空串保留为 ''，表示未填）"""
+        profile = {}
+        for key, var in self._vars.items():
+            if var is None:
+                continue
+            if isinstance(var, tk.BooleanVar):
+                profile[key] = var.get()
+            elif isinstance(var, tk.IntVar):
+                try:
+                    profile[key] = int(var.get())
+                except (tk.TclError, ValueError):
+                    profile[key] = 0
+            else:  # StringVar
+                profile[key] = var.get()
+        return P.validate_profile(profile)
+
+    def apply_profile(self, profile):
+        """把档案 dict 回填到控件"""
+        profile = P.validate_profile(profile)
+        for key, var in self._vars.items():
+            if var is None or key not in profile:
+                continue
+            try:
+                var.set(profile[key])
+            except tk.TclError:
+                pass
+
+    # ---------- 操作 ----------
+    def on_save(self):
+        profile = self.collect()
+        path = filedialog.asksaveasfilename(
+            title="保存档案",
+            defaultextension=".json",
+            initialfile="我的档案.json",
+            filetypes=[("JSON 档案", "*.json"), ("所有文件", "*.*")])
+        if not path:
+            return
+        try:
+            P.save_to_file(profile, path)
+            messagebox.showinfo("已保存", f"档案已保存到：\n{path}")
+        except OSError as e:
+            messagebox.showerror("保存失败", str(e))
+
+    def on_load(self):
+        path = filedialog.askopenfilename(
+            title="加载档案",
+            filetypes=[("JSON 档案", "*.json"), ("所有文件", "*.*")])
+        if not path:
+            return
+        try:
+            profile = P.load_from_file(path)
+            self.apply_profile(profile)
+            messagebox.showinfo("已加载", f"已加载档案：\n{path}")
+        except (OSError, ValueError) as e:
+            messagebox.showerror("加载失败", f"文件无法解析或不存在：\n{e}")
+
+    def on_reset(self):
+        if messagebox.askyesno("确认", "清空所有字段回到默认值？未保存的改动会丢失。"):
+            self.apply_profile(P.default_profile())
