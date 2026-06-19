@@ -22,13 +22,16 @@ profile.py —— 用户个人档案数据模型
 import json
 import os
 
+import cost_data as D
+
 # 档案结构定义：键 -> (默认值, 中文标签, 控件类型, 说明/选项)
 # 控件类型：spin(数字步进) / entry(文本数字) / combo(下拉) / check(勾选)
 # combo 的 options 放在说明字段（list）
 FIELD_DEFS = {
     "basic": [
         ("age", 30, "年龄", "spin", (16, 80)),
-        ("tier", "二线", "城市等级", "combo", ["一线", "新一线", "二线", "三线", "四线", "五线"]),
+        ("city", "", "所在城市", "entry", "如：北京、成都、长沙…输入后自动匹配城市等级"),
+        ("tier", "三线", "城市等级", "combo", ["一线", "新一线", "二线", "三线", "四线", "五线"]),
         ("health", "健康（无慢性病）", "健康状况", "combo",
          ["健康（无慢性病）", "有慢性病（需长期用药）", "需定期就医"]),
     ],
@@ -86,6 +89,20 @@ def default_profile():
     for group, fields in FIELD_DEFS.items():
         for key, default, *_ in fields:
             profile[key] = default
+    return profile
+
+
+def auto_map_tier(profile):
+    """
+    根据 profile 中的 city 自动匹配城市等级并写入 tier 字段。
+    若匹配不到则保留原 tier 不变。
+    返回更新后的 profile。
+    """
+    city = profile.get("city", "").strip()
+    if city:
+        tier = D.city_to_tier(city)
+        if tier:
+            profile["tier"] = tier
     return profile
 
 

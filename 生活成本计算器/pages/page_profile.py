@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 import profile as P
+import cost_data as D
 import gui_widgets as W
 import report as R
 
@@ -29,6 +30,7 @@ class ProfilePage(ttk.Frame):
         self._content = self._scroll.inner
         self._build_toolbar()
         self._build_form()
+        self._after_build_city_trigger()  # 给城市输入加自动识别
         self._build_apply_bar()
 
     # ---------- 顶部操作栏 ----------
@@ -74,10 +76,17 @@ class ProfilePage(ttk.Frame):
                    command=self.on_export_report).pack(side="right")
 
     def on_apply(self):
-        """把档案推送到处境页、对比页、三座山页（各页 apply_profile 自取所需字段）。"""
+        """把档案推送到处境页、对比页、三座山页、劳动权益页（各页 apply_profile 自取所需字段）。"""
         prof = self.collect()
+        # 若填了城市但等级是默认值，先自动识别
+        if prof.get("city") and D.city_to_tier(prof["city"]):
+            P.auto_map_tier(prof)
+            # 回填到控件
+            self._vars["tier"].set(prof["tier"])
+
         pages = self.app.pages if self.app else {}
-        targets = [("处境", "current"), ("对比", "compare"), ("三座山", "milestones")]
+        targets = [("处境", "current"), ("对比", "compare"),
+                   ("三座山", "milestones"), ("权益", "rights")]
         synced = []
         for label, key in targets:
             pg = pages.get(key)
@@ -91,7 +100,10 @@ class ProfilePage(ttk.Frame):
                     return
         if synced:
             from tkinter import messagebox
-            messagebox.showinfo("已同步", f"档案已同步到：{ '、'.join(synced) } 页。\n可去各页直接查看结果。")
+            msg = f"档案已同步到：{'、'.join(synced)} 页。\n城市「{prof.get('city', '未填')}」→ {prof.get('tier', '?')}"
+            if prof.get("city"):
+                msg += "\n\n生成「问AI」提示词时会自动带入城市信息。"
+            messagebox.showinfo("已同步", msg)
 
     def on_export_report(self):
         """各模块都算完后，询问并保存一份含档案数据 + 各模块分析 + 综合建议的报告。"""
@@ -135,12 +147,24 @@ class ProfilePage(ttk.Frame):
             ttk.Spinbox(box, from_=lo, to=hi, textvariable=var,
                         width=8).grid(row=row, column=1, sticky="w")
         elif ctype == "entry":
-            var = tk.StringVar(value=default)
-            ttk.Entry(box, textvariable=var, width=14).grid(
-                row=row, column=1, sticky="w")
-            if meta:  # 提示文字
+            if key == "city":
+                # 城市字段：宽输入框 + 自动识别按钮
+                var = tk.StringVar(value=default)
+                entry_w = ttk.Entry(box, textvariable=var, width=16)
+                entry_w.grid(row=row, column=1, sticky="w")
+                self._city_entry = entry_w  # 保存引用供绑定用
+                btn = ttk.Button(box, text="🔍 识别等级",
+                                 command=self._on_city_recognize)
+                btn.grid(row=row, column=2, sticky="w", padx=(4, 8))
                 ttk.Label(box, text=meta, style="Sub.TLabel").grid(
-                    row=row, column=2, sticky="w", padx=8)
+                    row=row, column=3, sticky="w")
+            else:
+                var = tk.StringVar(value=default)
+                ttk.Entry(box, textvariable=var, width=14).grid(
+                    row=row, column=1, sticky="w")
+                if meta:  # 提示文字
+                    ttk.Label(box, text=meta, style="Sub.TLabel").grid(
+                        row=row, column=2, sticky="w", padx=8)
         elif ctype == "combo":
             var = tk.StringVar(value=default)
             ttk.Combobox(box, textvariable=var, values=meta,
@@ -153,6 +177,37 @@ class ProfilePage(ttk.Frame):
         else:
             var = None
         self._vars[key] = var
+
+    # ---------- 城市自动识别 ----------
+    def _after_build_city_trigger(self):
+        """给城市输入框绑定键盘事件：聚焦离开时自动识别城市等级。"""
+        city_var = self._vars.get("city")
+        if city_var is None:
+            return
+        # 绑定 <FocusOut>（输入框失去焦点时触发）
+        entry = getattr(self, "_city_entry", None)
+        if entry:
+            entry.bind("<FocusOut>", lambda e: self._on_city_recognize())
+            entry.bind("<Return>", lambda e: self._on_city_recognize())
+
+    def _on_city_recognize(self):
+        """根据输入的城市名自动匹配城市等级。未检索到时弹窗提示。"""
+        city = self._vars["city"].get().strip()
+        if not city:
+            return
+        tier = D.city_to_tier(city)
+        if tier:
+            self._vars["tier"].set(tier)
+        else:
+            # 查不到 → 弹窗提示，但城市名仍保留用于同步到 AI 提示词
+            from tkinter import messagebox
+            messagebox.showinfo(
+                "未检索到对应城市",
+                f"未在数据库中检索到「{city}」的等级信息。\n\n"
+                "请确认输入的是官方城市名（如「石家庄」而非「石家庄市」），\n"
+                "或自行在上方「城市等级」下拉框中手动选择对应等级。\n\n"
+                "你填写的城市名仍会同步到各模块和「问AI」提示词中。"
+            )
 
     # ---------- 收集 / 回填 ----------
     def collect(self):
@@ -175,6 +230,9 @@ class ProfilePage(ttk.Frame):
     def apply_profile(self, profile):
         """把档案 dict 回填到控件"""
         profile = P.validate_profile(profile)
+        # 若填了城市，自动识别城市等级
+        if profile.get("city") and D.city_to_tier(profile["city"]):
+            P.auto_map_tier(profile)
         for key, var in self._vars.items():
             if var is None or key not in profile:
                 continue

@@ -17,6 +17,7 @@ import gui_widgets as W
 class MilestonesPage(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
+        self._profile_city = ""  # 从档案同步的城市名，用于提示词
         self._computed = {"marriage": False, "child": False, "retire": False}
         self._scroll = W.ScrollableFrame(self)
         self._scroll.pack(fill="both", expand=True)
@@ -45,6 +46,7 @@ class MilestonesPage(ttk.Frame):
 
     def apply_profile(self, prof):
         """从档案同步：城市 + 月薪（三座山共享字段）。"""
+        self._profile_city = prof.get("city", "")
         if prof.get("tier"):
             self.var_tier.set(prof["tier"])
         wage = prof.get("wage", "")
@@ -73,6 +75,10 @@ class MilestonesPage(ttk.Frame):
 
         ttk.Label(top, text="下面三座山各自独立，互不影响。",
                   style="Sub.TLabel").grid(row=2, column=0, columnspan=4, sticky="w", pady=4)
+        ttk.Button(top, text="生成「问 AI」的提示词（让 AI 帮你规划三座山）",
+                   style="AskAI.TButton",
+                   command=self._open_milestones_prompt).grid(
+            row=3, column=0, columnspan=4, sticky="ew", pady=(4, 2))
 
         # ─── 第一座山：结婚 ───
         self._build_marriage()
@@ -341,3 +347,12 @@ class MilestonesPage(ttk.Frame):
                    f"总缺口约 {total_gap:,.0f} 元。"
                    f"如果从现在起每月多存 {-gap:,} 元，可填补缺口。")
             self._retire_tip.config(text=tip)
+
+    def _open_milestones_prompt(self):
+        W.open_prompt_dialog(
+            self, "问 AI 的提示词（人生三座山）", with_city=True,
+            initial_city=self._profile_city,
+            build_fn=lambda city: E.build_milestones_prompt(
+                self.var_tier.get(), self._wage(), city),
+            intro="把下面这段复制到任意 AI，它会先问你最关心哪座山（结婚/养娃/养老）"
+                  "和细节，再结合你的城市估算要花多少钱、该怎么准备。")

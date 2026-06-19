@@ -20,6 +20,9 @@ from pages.page_current import CurrentSituationPage
 from pages.page_compare import ComparePage
 from pages.page_milestones import MilestonesPage
 from pages.page_about import AboutPage
+from pages.page_debt import DebtPage
+from pages.page_rights import RightsPage
+from pages.page_help import HelpPage
 
 
 class App:
@@ -60,7 +63,10 @@ class App:
             ("② 我现在的处境\n（输入月薪算结余）", "current"),
             ("③ 城市加减法\n（换城市值不值）", "compare"),
             ("④ 人生三座山\n（结婚/养娃/养老）", "milestones"),
-            ("⑤ 关于与数据说明", "about"),
+            ("⑤ 借贷真相\n（反算真实年化）", "debt"),
+            ("⑥ 劳动权益\n（加班费/失业金/工伤等）", "rights"),
+            ("⑦ 求助渠道\n（出事找谁）", "help"),
+            ("⑧ 关于与数据说明", "about"),
         ]
         for text, key in page_specs:
             btn = ttk.Button(nav, text=text, style="Nav.TButton",
@@ -85,6 +91,9 @@ class App:
         self.pages["compare"] = ComparePage(self.content)
         self.pages["milestones"] = MilestonesPage(self.content)
         self.pages["about"] = AboutPage(self.content)
+        self.pages["debt"] = DebtPage(self.content)
+        self.pages["rights"] = RightsPage(self.content)
+        self.pages["help"] = HelpPage(self.content)
         for p in self.pages.values():
             p.grid(row=0, column=0, sticky="nsew")
 

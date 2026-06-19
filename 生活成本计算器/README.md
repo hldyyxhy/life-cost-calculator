@@ -19,15 +19,11 @@
 ## 如何运行
 
 ### 前提
-已安装 Python 3（本机已装 Python 3.13）。**无需任何第三方包**，仅用标准库 tkinter。
+已安装 Python 3。**无需任何第三方包**，仅用标准库 tkinter。
 
 ### 运行方式（任选其一）
 - **最简单**：双击 `main.py`
-- **命令行**：
-  ```
-  "C:\Users\GF\AppData\Local\Programs\Python\Python313\python.exe" main.py
-  ```
-- **若已把 Python 加入 PATH**：`python main.py`
+- **命令行**：`python main.py`
 
 ## 文件结构
 
@@ -38,19 +34,26 @@
 ├── calc_engine.py           # 计算逻辑（纯函数，可单独测试）
 ├── gui_widgets.py           # 可复用 GUI 组件与统一样式
 ├── gui_app.py               # 主窗口（左侧导航 + 右侧内容区）
+├── rights_data.py           # 劳动权益补充数据（失业金/4050/工伤等）
+├── profile.py               # 用户档案数据模型
+├── report.py                # 综合报告生成
 ├── pages/
-│   ├── page_current.py      # 模块1：我现在的处境（月结余计算 + 生存底线）
+│   ├── page_profile.py      # 我的档案（用户信息表单）
+│   ├── page_current.py      # 模块1：我现在的处境（月结余计算）
 │   ├── page_compare.py      # 模块2：城市加减法（城市对比）
 │   ├── page_milestones.py   # 模块3：人生三座山（结婚/养娃/养老）
-│   └── page_about.py        # 关于与数据说明
+│   ├── page_about.py        # 关于与数据说明
+│   ├── page_rights.py       # 劳动权益（加班费/失业金/4050/工伤）
+│   ├── page_debt.py         # 借贷真相（真实年化反算）
+│   └── page_help.py         # 求助渠道（出事找谁）
 └── README.md
 ```
 
 ## 数据来源与可靠性
 
 - 所有数据来自 2023-2026 年公开调研报告（育娲《中国生育成本报告》、国家统计局、
-  北大 CIEFR、国家医保局、人社部、各市统计局、贝壳/中指/诸葛/麟评/中规院等）。
-- 完整调研底稿见上级目录 `../调研数据/`，含 6 份详细文档（3 份原始 + 3 份补充）。
+  北大 CIEFR、国家医保局、人社部、各市统计局等）。
+- 完整调研底稿见 `调研数据/` 目录。
 - **所有数字均为估算中值**，个体差异可能很大，仅供了解量级与结构，
   **不作为任何理财、投资或消费决策的依据**。
 

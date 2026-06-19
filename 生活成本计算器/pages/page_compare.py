@@ -17,6 +17,7 @@ import gui_widgets as W
 class ComparePage(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
+        self._profile_city = ""  # 从档案同步的城市名，用于提示词
         self._scroll = W.ScrollableFrame(self)
         self._scroll.pack(fill="both", expand=True)
         self._content = self._scroll.inner
@@ -25,6 +26,8 @@ class ComparePage(ttk.Frame):
 
     def apply_profile(self, prof):
         """从档案同步：本人工资→方案A工资、城市→方案A城市，及生活方式。方案B（目标城市）保留用户选择。"""
+        # 先存储城市信息，供「问 AI」提示词使用
+        self._profile_city = prof.get("city", "")
         wage = prof.get("wage", "")
         if wage == "":
             wage = str(D.TYPICAL_WAGE.get(prof.get("tier", "一线"), 8000))
@@ -121,6 +124,10 @@ class ComparePage(ttk.Frame):
                                       padx=8, pady=6)
         self.txt_conclusion.grid(row=4, column=0, sticky="ew", pady=2)
         self.txt_conclusion.config(state="disabled")
+        ttk.Button(res, text="生成「问 AI」的提示词（让 AI 帮你判断换城市值不值）",
+                   style="AskAI.TButton",
+                   command=self._open_compare_prompt).grid(
+            row=5, column=0, sticky="ew", pady=(8, 2))
 
     def on_compare(self):
         try:
@@ -202,3 +209,15 @@ class ComparePage(ttk.Frame):
         self.txt_conclusion.delete("1.0", "end")
         self.txt_conclusion.insert("1.0", text)
         self.txt_conclusion.config(state="disabled")
+
+    def _open_compare_prompt(self):
+        def build(city):
+            return E.build_compare_prompt(
+                self.var_tier_a.get(), self.var_tier_b.get(),
+                float(self.var_wage.get()), city)
+        W.open_prompt_dialog(
+            self, "问 AI 的提示词（换城市值不值）", with_city=True,
+            build_fn=build, initial_city=self._profile_city,
+            city_label="你想去的目标城市（具体名称）：",
+            intro="把下面这段复制到任意 AI。记得填你想去的【具体城市名】，AI 会对比两座城市"
+                  "的真实情况，给你值不值的判断。")

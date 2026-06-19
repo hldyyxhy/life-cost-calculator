@@ -19,6 +19,7 @@ class CurrentSituationPage(ttk.Frame):
     def __init__(self, parent, app=None):
         super().__init__(parent)
         self.app = app   # 用于跨页读取档案
+        self._profile_city = ""  # 从档案同步的城市名，用于提示词
         self._scroll = W.ScrollableFrame(self)
         self._scroll.pack(fill="both", expand=True)
         self._content = self._scroll.inner
@@ -28,6 +29,8 @@ class CurrentSituationPage(ttk.Frame):
     # ---------- 档案载入 ----------
     def apply_profile(self, prof):
         """把档案 dict 映射填入本页表单（供档案页「确定」推送调用）。"""
+        # 先存储城市信息，供「问 AI」提示词使用
+        self._profile_city = prof.get("city", "")
         m = {
             "age": self.var_age, "tier": self.var_tier, "wage": self.var_wage,
             "insurance": self.var_ins, "housing": self.var_housing,
@@ -299,14 +302,40 @@ class CurrentSituationPage(ttk.Frame):
         self.table.grid(row=8, column=0, sticky="nsew", pady=4)
         res.rowconfigure(8, weight=1)
 
-        # 6. 白话解读
+        # 6. 白话解读（带垂直滚动条）
         ttk.Label(res, text="处境解读", style="Header.TLabel").grid(
             row=9, column=0, sticky="w", pady=(8, 2))
-        self.txt_interp = tk.Text(res, height=9, wrap="word", relief="flat",
+        interp_frame = ttk.Frame(res)
+        interp_frame.grid(row=10, column=0, sticky="ew", pady=2)
+        interp_frame.columnconfigure(0, weight=1)
+        self.txt_interp = tk.Text(interp_frame, height=9, wrap="word", relief="flat",
                                   font=(W.FONT_FAMILY, 11), bg="#f7f9fc",
                                   padx=8, pady=6)
-        self.txt_interp.grid(row=10, column=0, sticky="ew", pady=2)
+        self.txt_interp.grid(row=0, column=0, sticky="ew")
+        sb_interp = ttk.Scrollbar(interp_frame, orient="vertical",
+                                  command=self.txt_interp.yview)
+        self.txt_interp.configure(yscrollcommand=sb_interp.set)
+        sb_interp.grid(row=0, column=1, sticky="ns")
         self.txt_interp.config(state="disabled")
+        ttk.Button(res, text="生成「问 AI」的提示词（让 AI 详细解读你的处境）",
+                   style="AskAI.TButton",
+                   command=self._open_current_prompt).grid(
+            row=11, column=0, sticky="ew", pady=(8, 2))
+
+    def _open_current_prompt(self):
+        def build(city):
+            return E.build_current_situation_prompt(
+                int(self.var_age.get()), self.var_tier.get(),
+                float(self.var_wage.get()), self.var_ins.get(),
+                self.var_housing.get(), self.var_food.get(),
+                self.var_car.get(), int(self.var_kids.get()),
+                self.var_elderly.get(),
+                float(self.var_savings.get() or "0"), city)
+        W.open_prompt_dialog(
+            self, "问 AI 的提示词（我的处境解读）", with_city=True,
+            build_fn=build, initial_city=self._profile_city,
+            intro="工具算的是「死数」。把下面这段复制到任意 AI，它会详细解读你的处境、"
+                  "给可执行的建议。")
 
     # ---------- 计算 ----------
     def on_compute(self):

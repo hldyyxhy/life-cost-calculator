@@ -74,6 +74,98 @@ def apply_style(root):
     style.configure("Treeview.Heading", font=(FONT_FAMILY, 10, "bold"))
     # 导航按钮样式
     style.configure("Nav.TButton", font=(FONT_FAMILY, 12, "bold"), padding=12)
+    # 标签页（Notebook）样式：学习侧边栏——选中态更深（深铁灰底白字），未选中浅铁灰底深字
+    style.configure("TNotebook", tabmargins=(6, 6, 2, 0))
+    style.configure("TNotebook.Tab", font=(FONT_FAMILY, 11, "bold"),
+                    padding=(14, 8), foreground="#555")
+    style.map("TNotebook.Tab",
+              background=[("selected", "#5a616b"), ("!selected", "#d4d8de")],
+              foreground=[("selected", "#ffffff"), ("!selected", "#555")],
+              expand=[("selected", (1, 1, 1, 0))])
+    # 「问 AI」提示词按钮：醒目（主色蓝底白字加粗），鼓励使用
+    style.configure("AskAI.TButton", font=(FONT_FAMILY, 11, "bold"),
+                    foreground="#ffffff", background=COLOR_ACCENT, padding=(14, 8))
+    style.map("AskAI.TButton",
+              background=[("active", "#1f4a8a"), ("pressed", "#163a6e")],
+              foreground=[("active", "#ffffff")])
+
+
+def open_prompt_dialog(parent, title, build_fn, with_city=False, intro="",
+                       city_label="城市（可选，让 AI 结合本地规定）：",
+                       initial_city=""):
+    """打开「问 AI 提示词」弹窗（各功能复用，主界面只留一个小按钮即可）。
+
+    parent:   父控件（用于剪贴板与 transient）
+    title:    弹窗标题
+    build_fn: callable(city_str) -> 提示词文本；每次「重新生成」都调用它实时读界面数据
+    with_city: 是否显示城市输入框（让 AI 结合本地规定）
+    intro:    顶部说明文字（可选）
+    initial_city: 城市输入框的初始值（从档案同步时自动填入）
+    """
+    win = tk.Toplevel(parent)
+    win.title(title)
+    w, h = 660, 580
+    sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
+    win.geometry(f"{w}x{h}+{(sw-w)//2}+{(sh-h)//2}")
+    win.transient(parent)
+
+    top = ttk.Frame(win, padding=8)
+    top.pack(fill="x")
+    if intro:
+        ttk.Label(top, text=intro, style="Sub.TLabel",
+                  wraplength=600, justify="left").pack(fill="x", pady=(0, 6))
+    city_var = tk.StringVar(value=initial_city)
+    row = None
+    if with_city:
+        row = ttk.Frame(top)
+        row.pack(fill="x")
+        ttk.Label(row, text=city_label).pack(side="left")
+        ttk.Entry(row, textvariable=city_var, width=14).pack(side="left", padx=6)
+
+    # 提示词文本（可滚动）
+    txt_frame = ttk.Frame(win)
+    txt_frame.pack(fill="both", expand=True, padx=8, pady=4)
+    txt_frame.columnconfigure(0, weight=1)
+    txt_frame.rowconfigure(0, weight=1)
+    txt = tk.Text(txt_frame, wrap="word", font=(FONT_FAMILY, 10),
+                  relief="solid", borderwidth=1, padx=8, pady=6)
+    txt.grid(row=0, column=0, sticky="nsew")
+    _sb = ttk.Scrollbar(txt_frame, orient="vertical", command=txt.yview)
+    txt.configure(yscrollcommand=_sb.set)
+    _sb.grid(row=0, column=1, sticky="ns")
+
+    bot = ttk.Frame(win, padding=8)
+    bot.pack(fill="x")
+
+    def regen():
+        try:
+            text = build_fn(city_var.get().strip())
+        except Exception as e:
+            text = f"生成提示词时出错：{e}\n请检查上方输入是否填了有效数字。"
+        txt.delete("1.0", "end")
+        txt.insert("1.0", text)
+        hint.config(text="")
+
+    def do_copy():
+        parent.clipboard_clear()
+        parent.clipboard_append(txt.get("1.0", "end-1c"))
+        hint.config(text="已复制！去 AI 对话框粘贴即可（Ctrl+V）")
+
+    try:
+        txt.insert("1.0", build_fn(city_var.get().strip()))
+    except Exception as e:  # 读界面数据出错时给出友好提示，不崩
+        txt.insert("1.0", f"生成提示词时出错：{e}\n请检查上方输入是否填了有效数字。")
+
+    # 一键复制按钮放在提示词「正上方」，打开弹窗第一眼就能看到（醒目蓝色）
+    action_row = ttk.Frame(top)
+    action_row.pack(fill="x", pady=(6, 0))
+    ttk.Button(action_row, text="一键复制到剪贴板", style="AskAI.TButton",
+               command=do_copy).pack(side="left")
+    hint = ttk.Label(action_row, text="", style="Sub.TLabel")
+    hint.pack(side="left", padx=8)
+    if row is not None:
+        ttk.Button(row, text="重新生成", command=regen).pack(side="left", padx=6)
+    ttk.Button(bot, text="关闭", command=win.destroy).pack(side="right")
 
 
 def make_radio_group(parent, title, options, default, descriptions=None,
