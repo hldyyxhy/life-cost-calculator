@@ -91,8 +91,9 @@ def build_advice(profile, cur, cmp, ms):
         sr = cur["surplus_rate"]
         surplus = cur["surplus"]
         if surplus < 0:
-            tips.append(f"⚠️ 你目前入不敷出，每月缺口 {-surplus:,} 元。首要任务是：要么增收（副业/换岗），"
-                        f"要么把「宽裕」档饮食降为「普通」、不养车、搬郊区合租，先把成本压到生存底线以内。")
+            tips.append(f"⚠️ 你目前入不敷出，每月缺口 {-surplus:,} 元。可以从两方面着手："
+                        f"一是增收（副业/换岗），二是减支（把「宽裕」档饮食降为「普通」、不养车、搬郊区合租），"
+                        f"先把每月成本压到生存底线以内。")
         elif sr < 10:
             tips.append(f"结余率仅 {sr:.0f}%，抗风险能力极弱。建议把饮食/交通降一档，"
                         f"目标是月结余率提到 20% 以上（约多存 {cur['cost_total']*0.1:,.0f} 元/月）。")

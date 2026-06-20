@@ -11,10 +11,14 @@ page_debt.py —— 借贷真相（5 个标签页，补债务信息差）
 
 业务逻辑全在 calc_engine 的纯函数里，本文件只负责输入/展示。
 """
+import json
+import os
+
 import tkinter as tk
 from tkinter import ttk
 
 import calc_engine as E
+import profile as P
 import gui_widgets as W
 
 
@@ -28,23 +32,12 @@ class DebtPage(ttk.Frame):
         self._build_affordable()
         self._build_snowball()
         self._build_spiral()
+        self._build_health()
         self._nb.select(0)
 
     # ---------- 通用：只读解读 Text ----------
     def _make_note(self, parent, height=6, grid=None):
-        """带垂直滚动条的只读解读框（frame 内 Text + Scrollbar，返回 Text）。"""
-        frame = ttk.Frame(parent)
-        if grid:
-            frame.grid(**grid)
-        frame.columnconfigure(0, weight=1)
-        tw = tk.Text(frame, height=height, wrap="word", relief="flat",
-                     bg="#f7f9fc", font=(W.FONT_FAMILY, 11), padx=8, pady=6)
-        tw.grid(row=0, column=0, sticky="nsew")
-        sb = ttk.Scrollbar(frame, orient="vertical", command=tw.yview)
-        tw.configure(yscrollcommand=sb.set)
-        sb.grid(row=0, column=1, sticky="ns")
-        tw.config(state="disabled")
-        return tw
+        return W.readonly_note(parent, height=height, grid=grid)
 
     def _set_note(self, tw, text):
         tw.config(state="normal")
@@ -561,3 +554,173 @@ class DebtPage(ttk.Frame):
             build_fn=lambda city: E.build_spiral_prompt(
                 float(self.var_sp_init.get()), float(self.var_sp_rate.get()),
                 int(self.var_sp_months.get()), float(self.var_sp_pay.get())))
+
+    # ============================================================
+    # ⑥ 债务健康仪表盘
+    # ============================================================
+    def _build_health(self):
+        tab = ttk.Frame(self._nb)
+        self._nb.add(tab, text="⑥ 债务健康")
+        sf = W.ScrollableFrame(tab); sf.pack(fill="both", expand=True)
+        c = sf.inner
+
+        form = W.CardFrame(c, padding=10)
+        form.pack(side="top", fill="x", padx=8, pady=(8, 4))
+        form.columnconfigure(1, weight=1)
+        ttk.Label(form, text="债务健康仪表盘", style="Header.TLabel").grid(
+            row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
+        ttk.Label(form, text="总负债（元）：").grid(row=1, column=0, sticky="w", pady=3)
+        self.var_health_debt = tk.StringVar(value="100000")
+        ttk.Entry(form, textvariable=self.var_health_debt, width=14).grid(row=1, column=1, sticky="w")
+        ttk.Label(form, text="月收入（元）：").grid(row=2, column=0, sticky="w", pady=3)
+        self.var_health_income = tk.StringVar(value="8000")
+        ttk.Entry(form, textvariable=self.var_health_income, width=14).grid(row=2, column=1, sticky="w")
+        ttk.Label(form, text="每月能还（元）：").grid(row=3, column=0, sticky="w", pady=3)
+        self.var_health_pay = tk.StringVar(value="3000")
+        ttk.Entry(form, textvariable=self.var_health_pay, width=14).grid(row=3, column=1, sticky="w")
+        ttk.Label(form, text="平均年化（%）：").grid(row=4, column=0, sticky="w", pady=3)
+        self.var_health_apr = tk.StringVar(value="18")
+        ttk.Entry(form, textvariable=self.var_health_apr, width=8).grid(row=4, column=1, sticky="w")
+        ttk.Button(form, text="▶ 评估债务健康",
+                   command=self.on_health_compute).grid(
+            row=5, column=0, columnspan=2, sticky="ew", pady=(8, 2))
+
+        res = W.CardFrame(c, padding=8)
+        res.pack(side="top", fill="both", expand=True, padx=8, pady=(0, 8))
+        self.lbl_health_level = ttk.Label(res, text="—", font=W.FONT_BIG,
+                                          foreground=W.COLOR_ACCENT)
+        self.lbl_health_level.pack(anchor="w", pady=(0, 4))
+        ttk.Label(res, text="明细与建议", style="Header.TLabel").pack(anchor="w")
+        self.txt_health = W.readonly_note(res, height=10, bg="#f0f7f0")
+        ttk.Button(res, text="生成「问 AI」的提示词（给摆脱债务的建议）",
+                   style="AskAI.TButton",
+                   command=self._open_health_prompt).pack(anchor="w", pady=(8, 0))
+
+    def on_health_compute(self):
+        try:
+            debt = float(self.var_health_debt.get() or 0)
+            income = float(self.var_health_income.get() or 0)
+            pay = float(self.var_health_pay.get() or 0)
+            apr = float(self.var_health_apr.get()) / 100
+        except ValueError:
+            self._set_note(self.txt_health, "请输入有效的数字。")
+            return
+        r = E.assess_debt_health(debt, income, pay, apr)
+        if "error" in r:
+            self.lbl_health_level.config(text=r["error"], foreground=W.COLOR_DEFICIT)
+            self._set_note(self.txt_health, "")
+            return
+        color = {"surplus": W.COLOR_SURPLUS, "accent": "#e67e22",
+                 "deficit": W.COLOR_DEFICIT}.get(r["color"], W.COLOR_ACCENT)
+        self.lbl_health_level.config(text=r["level"], foreground=color)
+        self._set_note(self.txt_health, r["note"])
+
+    def _open_health_prompt(self):
+        W.open_prompt_dialog(
+            self, "问 AI（债务健康）",
+            build_fn=lambda c: E.build_debt_health_prompt(
+                float(self.var_health_debt.get() or 0), float(self.var_health_income.get() or 0),
+                float(self.var_health_pay.get() or 0), float(self.var_health_apr.get()) / 100),
+            intro="把这段复制给 AI，它会评估你的债务健康、给摆脱债务的步骤。")
+
+    # ============================================================
+    # 本地持久化：5 个 tab 的输入（含多笔债清单）
+    # ============================================================
+    def collect_state(self):
+        """收集 5 个 tab 的全部输入为可序列化 dict。"""
+        return {
+            "version": 1,
+            "apr": {
+                "principal": self.var_principal.get(),
+                "monthly": self.var_monthly.get(),
+                "periods": self.var_periods.get(),
+            },
+            "compare": {
+                "p": self.var_cmp_p.get(),
+                "apr": self.var_cmp_apr.get(),
+                "n": self.var_cmp_n.get(),
+            },
+            "affordable": {
+                "surplus": self.var_aff_surplus.get(),
+                "apr": self.var_aff_apr.get(),
+                "n": self.var_aff_n.get(),
+                "income": self.var_aff_income.get(),
+            },
+            "snowball": {
+                "strategy": self.var_snow_strategy.get(),
+                "extra": self.var_snow_extra.get(),
+                "rows": [
+                    {"name": r["name"].get(), "balance": r["balance"].get(),
+                     "rate": r["rate"].get(), "min": r["min"].get()}
+                    for r in self._debt_rows
+                ],
+            },
+            "spiral": {
+                "init": self.var_sp_init.get(),
+                "rate": self.var_sp_rate.get(),
+                "months": self.var_sp_months.get(),
+                "pay": self.var_sp_pay.get(),
+            },
+        }
+
+    def apply_state(self, st):
+        """从 dict 恢复 5 个 tab 输入。结构异常则忽略，保持默认。"""
+        try:
+            a = st["apr"]
+            self.var_principal.set(str(a["principal"]))
+            self.var_monthly.set(str(a["monthly"]))
+            self.var_periods.set(int(a["periods"]))
+
+            c = st["compare"]
+            self.var_cmp_p.set(str(c["p"]))
+            self.var_cmp_apr.set(str(c["apr"]))
+            self.var_cmp_n.set(int(c["n"]))
+
+            f = st["affordable"]
+            self.var_aff_surplus.set(str(f["surplus"]))
+            self.var_aff_apr.set(str(f["apr"]))
+            self.var_aff_n.set(int(f["n"]))
+            self.var_aff_income.set(str(f["income"]))
+
+            sn = st["snowball"]
+            rows = sn["rows"]
+            if rows:
+                # 用保存的行重建（覆盖构造时的 2 笔默认样例）
+                self._debt_rows = [
+                    {k: tk.StringVar(value=str(r.get(k, "")))
+                     for k in ("name", "balance", "rate", "min")}
+                    for r in rows
+                ]
+                self._rebuild_debt_rows()
+            self.var_snow_strategy.set(str(sn["strategy"]))
+            self.var_snow_extra.set(str(sn["extra"]))
+
+            sp = st["spiral"]
+            self.var_sp_init.set(str(sp["init"]))
+            self.var_sp_rate.set(str(sp["rate"]))
+            self.var_sp_months.set(int(sp["months"]))
+            self.var_sp_pay.set(str(sp["pay"]))
+        except (KeyError, ValueError, TypeError):
+            pass   # 状态损坏则保持默认，不崩
+
+    def _state_path(self):
+        return os.path.join(P.app_data_dir(), "debt_state.json")
+
+    def save_state(self):
+        """把 5 tab 输入存到 data/debt_state.json。失败静默。"""
+        try:
+            with open(self._state_path(), "w", encoding="utf-8") as f:
+                json.dump(self.collect_state(), f, ensure_ascii=False, indent=2)
+        except OSError:
+            pass
+
+    def load_state(self):
+        """从 data/debt_state.json 恢复输入。文件缺失/损坏则不动。"""
+        path = self._state_path()
+        if not os.path.exists(path):
+            return
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                self.apply_state(json.load(f))
+        except (OSError, ValueError):
+            pass

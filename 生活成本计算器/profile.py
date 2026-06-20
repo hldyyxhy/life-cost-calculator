@@ -21,6 +21,7 @@ profile.py —— 用户个人档案数据模型
 
 import json
 import os
+import sys
 
 import cost_data as D
 
@@ -57,8 +58,10 @@ FIELD_DEFS = {
     ],
     "family": [
         ("num_children", 0, "子女数量", "spin", (0, 6)),
-        ("child_age_group", "中小学（6-18岁）", "子女年龄段", "combo",
-         ["3岁以下（婴幼儿）", "幼儿园（3-6岁）", "中小学（6-18岁）", "大学在读（18岁+）"]),
+        ("child_baby", 0, "　3岁以下（婴幼儿）几人", "spin", (0, 6)),
+        ("child_kg", 0, "　幼儿园（3-6岁）几人", "spin", (0, 6)),
+        ("child_school", 0, "　中小学（6-18岁）几人", "spin", (0, 6)),
+        ("child_uni", 0, "　大学在读（18岁+）几人", "spin", (0, 6)),
         ("support_elderly", False, "赡养老人（个税专项扣除）", "check", None),
         ("has_housing_deduction", False, "有住房租金/房贷利息扣除", "check", None),
         ("has_continuing_education", False, "本人继续教育（+400元/月）", "check", None),
@@ -81,6 +84,44 @@ GROUP_TITLES = {
     "family": "五、家庭负担",
     "finance": "六、负债与资产（抗风险）",
 }
+
+
+# 首次填写向导的步骤（字段 key 对齐 FIELD_DEFS；show_if 为 None 总显示，
+# 否则按已答字典 a 决定该字段是否出现——实现"没伴侣就不问伴侣薪资"式的智能跳过）
+WIZARD_STEPS = [
+    {"title": "先认识一下", "fields": [
+        {"key": "age"}, {"key": "city"},
+    ]},
+    {"title": "你的收入", "fields": [
+        {"key": "wage"}, {"key": "insurance"}, {"key": "has_side_income"},
+        {"key": "side_income", "show_if": lambda a: a.get("has_side_income")},
+    ]},
+    {"title": "住和吃、出行", "fields": [
+        {"key": "housing"}, {"key": "food"}, {"key": "has_car"},
+    ]},
+    {"title": "成家了吗", "fields": [
+        {"key": "has_partner"},
+        {"key": "partner_wage",      "show_if": lambda a: a.get("has_partner")},
+        {"key": "partner_insurance", "show_if": lambda a: a.get("has_partner")},
+    ]},
+    {"title": "孩子和老人", "fields": [
+        {"key": "num_children"},
+        {"key": "child_baby",   "show_if": lambda a: (a.get("num_children") or 0) > 0},
+        {"key": "child_kg",     "show_if": lambda a: (a.get("num_children") or 0) > 0},
+        {"key": "child_school", "show_if": lambda a: (a.get("num_children") or 0) > 0},
+        {"key": "child_uni",    "show_if": lambda a: (a.get("num_children") or 0) > 0},
+        {"key": "support_elderly"},
+    ]},
+    {"title": "负债和存款", "fields": [
+        {"key": "mortgage_monthly"},
+        {"key": "car_loan_monthly", "show_if": lambda a: a.get("has_car")},
+        {"key": "savings"}, {"key": "social_expense"},
+    ]},
+    {"title": "其他（都可留空）", "fields": [
+        {"key": "health"}, {"key": "support_family"},
+        {"key": "has_housing_deduction"}, {"key": "has_continuing_education"},
+    ]},
+]
 
 
 def default_profile():
@@ -106,13 +147,31 @@ def auto_map_tier(profile):
     return profile
 
 
+# 旧档案 child_age_group（单值字符串）→ 对应 child_* 段字段
+_OLD_CHILD_SEG_TO_FIELD = {
+    "3岁以下（婴幼儿）": "child_baby",
+    "幼儿园（3-6岁）": "child_kg",
+    "中小学（6-18岁）": "child_school",
+    "大学在读（18岁+）": "child_uni",
+}
+
+
 def validate_profile(raw):
     """
     用 FIELD_DEFS 校验并补全一份档案：
     - 多出的键丢弃
     - 缺失的键用默认值补
     - 数字类（entry/spin）空字符串保留为空串（表示"未填"）
+    - 旧版 child_age_group（单值）自动迁移为对应 child_* 段计数
     """
+    raw = dict(raw or {})
+    if "child_age_group" in raw:
+        old_seg = raw.pop("child_age_group")
+        n = raw.get("num_children", 0) or 0
+        field = _OLD_CHILD_SEG_TO_FIELD.get(old_seg, "child_school")
+        # 仅当还没填任何段计数时，才把旧段映射过去（避免覆盖已填的新数据）
+        if not any(raw.get(f) for f in _OLD_CHILD_SEG_TO_FIELD.values()):
+            raw[field] = n
     result = default_profile()
     all_keys = {k for fields in FIELD_DEFS.values() for (k, *_) in fields}
     for k in all_keys:
@@ -149,6 +208,51 @@ def load_from_file(path):
         return from_json(f.read())
 
 
+# ---------- 本地持久化（上次档案） ----------
+
+def app_data_dir():
+    """返回程序数据目录（程序同级 data/）。
+
+    开发运行指向脚本所在目录；用 PyInstaller 打包成 exe 后指向 exe 同级目录
+    （仍可写）。若该目录不可写（极端只读），退回用户家目录，避免崩溃。
+    """
+    if getattr(sys, "frozen", False):          # PyInstaller 打包后的 exe
+        base = os.path.dirname(os.path.abspath(sys.executable))
+    else:                                       # 源码运行
+        base = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(base, "data")
+    try:
+        os.makedirs(data_dir, exist_ok=True)
+    except OSError:
+        data_dir = os.path.join(os.path.expanduser("~"), ".生活成本计算器")
+        os.makedirs(data_dir, exist_ok=True)
+    return data_dir
+
+
+def last_profile_path():
+    """上次使用档案的固定路径（程序同级 data/last_profile.json）。"""
+    return os.path.join(app_data_dir(), "last_profile.json")
+
+
+def save_last_profile(profile):
+    """把档案存为「上次档案」。失败静默，不阻塞用户。"""
+    try:
+        save_to_file(profile, last_profile_path())
+    except OSError:
+        pass
+
+
+def load_last_profile():
+    """读取「上次档案」。文件不存在或损坏返回 None（调用方走默认值）。"""
+    path = last_profile_path()
+    if not os.path.exists(path):
+        return None
+    try:
+        return load_from_file(path)
+    except (OSError, ValueError):
+        return None
+
+
 # ---------- 自检 ----------
 if __name__ == "__main__":
     p = default_profile()
@@ -162,7 +266,7 @@ if __name__ == "__main__":
     assert p2["wage"] == 8000 and p2["has_partner"] is True
     # 缺字段补全
     p3 = from_json('{"age": 25}')
-    assert p3["age"] == 25 and p3["tier"] == "二线"
+    assert p3["age"] == 25 and p3["tier"] == "三线"
     # 多余字段丢弃
     p4 = from_json('{"age": 25, "nonexistent": 999}')
     assert "nonexistent" not in p4

@@ -41,6 +41,8 @@ class RightsPage(ttk.Frame):
         self._build_unemployment(new_tab("③ 失业金"))
         self._build_subsidy(new_tab("④ 4050 补贴"))
         self._build_injury(new_tab("⑤ 工伤"))
+        self._build_tax(new_tab("⑥ 个税优化"))
+        self._build_assistance(new_tab("⑦ 本地救助"))
         self._nb.select(0)
 
     # ---------- 档案载入（从档案页「确定」同步接收）----------
@@ -63,22 +65,12 @@ class RightsPage(ttk.Frame):
             # 工伤tab
             if hasattr(self, "var_inj_city") and city in R.CITY_TO_PROVINCE:
                 self.var_inj_city.set(city)
+            if hasattr(self, "var_assist_city"):
+                self.var_assist_city.set(city)
 
     # ---------- 通用：只读解读 Text ----------
     def _make_note(self, parent, height=6, grid=None):
-        """带垂直滚动条的只读解读框（frame 内 Text + Scrollbar，返回 Text）。"""
-        frame = ttk.Frame(parent)
-        if grid:
-            frame.grid(**grid)
-        frame.columnconfigure(0, weight=1)
-        tw = tk.Text(frame, height=height, wrap="word", relief="flat",
-                     bg="#f7f9fc", font=(W.FONT_FAMILY, 11), padx=8, pady=6)
-        tw.grid(row=0, column=0, sticky="nsew")
-        sb = ttk.Scrollbar(frame, orient="vertical", command=tw.yview)
-        tw.configure(yscrollcommand=sb.set)
-        sb.grid(row=0, column=1, sticky="ns")
-        tw.config(state="disabled")
-        return tw
+        return W.readonly_note(parent, height=height, grid=grid)
 
     def _set_note(self, tw, text):
         tw.config(state="normal")
@@ -263,7 +255,7 @@ class RightsPage(ttk.Frame):
         ttk.Label(box, text="你参保的城市：").grid(row=0, column=0, sticky="w", pady=3)
         self.var_un_city = tk.StringVar(value="北京")
         ttk.Combobox(box, textvariable=self.var_un_city,
-                     values=sorted(R.CITY_TO_PROVINCE.keys()), width=12).grid(
+                     values=R.CITY_NAMES, width=12).grid(
             row=0, column=1, sticky="w")
         ttk.Label(box, text="累计缴费年限（年）：").grid(row=1, column=0, sticky="w", pady=3)
         self.var_un_years = tk.IntVar(value=6)
@@ -333,7 +325,7 @@ class RightsPage(ttk.Frame):
         ttk.Label(box, text="你所在的城市：").grid(row=0, column=0, sticky="w", pady=3)
         self.var_sub_city = tk.StringVar(value="北京")
         ttk.Combobox(box, textvariable=self.var_sub_city,
-                     values=sorted(R.CITY_TO_PROVINCE.keys()), width=12).grid(
+                     values=R.CITY_NAMES, width=12).grid(
             row=0, column=1, sticky="w")
         ttk.Button(box, text="查我所在地的补贴标准",
                    command=self.on_subsidy_compute).grid(
@@ -386,7 +378,7 @@ class RightsPage(ttk.Frame):
         ttk.Label(box, text="你所在的城市：").grid(row=0, column=0, sticky="w", pady=3)
         self.var_inj_city = tk.StringVar(value="广州")
         ttk.Combobox(box, textvariable=self.var_inj_city,
-                     values=sorted(R.CITY_TO_PROVINCE.keys()), width=12).grid(
+                     values=R.CITY_NAMES, width=12).grid(
             row=0, column=1, sticky="w")
         ttk.Label(box, text="伤残等级（1=最重 ~ 10=最轻）：").grid(row=1, column=0, sticky="w", pady=3)
         self.var_inj_grade = tk.IntVar(value=7)
@@ -431,7 +423,9 @@ class RightsPage(ttk.Frame):
         else:
             lines.append("· 伤残津贴：7-10 级不享受按月伤残津贴")
         if med is not None:
-            lines.append(f"· 一次性医疗/就业补助金（{prov}）：医疗 {med}、就业 {emp}（基数：{base_note}，需解除劳动关系）")
+            med_txt = f"{med} 个月" if med else "未收录"
+            emp_txt = f"{emp} 个月" if emp else "未收录"
+            lines.append(f"· 一次性医疗/就业补助金（{prov}）：医疗 {med_txt}、就业 {emp_txt}（基数：{base_note}，需解除劳动关系）")
         lines.append(f"· 工亡补助金（全国统一）：{R.WORK_INJURY_DEATH_COMPENSATION:,} 元")
         self._set_note(
             self.txt_inj,
@@ -475,6 +469,155 @@ class RightsPage(ttk.Frame):
             build_fn=lambda city: E.build_subsidy_prompt(city),
             intro="把下面这段复制到任意 AI，它会先问你必要的信息（年龄、是否自缴社保等），"
                   "再结合你所在城市查最新规定，告诉你能不能领、领多少、怎么申请。")
+
+    # ============================================================
+    # 个税优化（年终奖单独 vs 合并 / 专项附加扣除）
+    # ============================================================
+    def _build_tax(self, c):
+        form = W.CardFrame(c, padding=10)
+        form.pack(side="top", fill="x", padx=8, pady=(8, 4))
+        form.columnconfigure(1, weight=1)
+        ttk.Label(form, text="年终奖怎么交税更省？专项扣除用足了吗？",
+                  style="Header.TLabel").grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
+        ttk.Label(form, text="月薪（元）：").grid(row=1, column=0, sticky="w", pady=3)
+        self.var_tax_wage = tk.StringVar(value="8000")
+        ttk.Entry(form, textvariable=self.var_tax_wage, width=12).grid(row=1, column=1, sticky="w")
+        ttk.Label(form, text="年终奖（元）：").grid(row=2, column=0, sticky="w", pady=3)
+        self.var_tax_bonus = tk.StringVar(value="30000")
+        ttk.Entry(form, textvariable=self.var_tax_bonus, width=12).grid(row=2, column=1, sticky="w")
+        ttk.Label(form, text="月专项扣除合计（元）：").grid(row=3, column=0, sticky="w", pady=3)
+        self.var_tax_special = tk.StringVar(value="3000")
+        ttk.Entry(form, textvariable=self.var_tax_special, width=12).grid(row=3, column=1, sticky="w")
+        ttk.Label(form, text="月社保个人部分（元）：").grid(row=4, column=0, sticky="w", pady=3)
+        self.var_tax_social = tk.StringVar(value="1500")
+        ttk.Entry(form, textvariable=self.var_tax_social, width=12).grid(row=4, column=1, sticky="w")
+        ttk.Label(form, text="家庭情况：").grid(row=5, column=0, sticky="w", pady=3)
+        fam = ttk.Frame(form)
+        fam.grid(row=5, column=1, sticky="w")
+        self.var_tax_kids = tk.IntVar(value=0)
+        self.var_tax_elderly = tk.BooleanVar(value=False)
+        self.var_tax_loan = tk.BooleanVar(value=False)
+        self.var_tax_edu = tk.BooleanVar(value=False)
+        ttk.Label(fam, text="子女").pack(side="left")
+        ttk.Spinbox(fam, from_=0, to=6, textvariable=self.var_tax_kids,
+                    width=3).pack(side="left", padx=2)
+        ttk.Checkbutton(fam, text="赡养老人", variable=self.var_tax_elderly).pack(side="left", padx=4)
+        ttk.Checkbutton(fam, text="有房贷", variable=self.var_tax_loan).pack(side="left", padx=2)
+        ttk.Checkbutton(fam, text="继续教育", variable=self.var_tax_edu).pack(side="left", padx=2)
+        ttk.Button(form, text="▶ 算一算",
+                   command=self.on_tax).grid(row=6, column=0, columnspan=2, sticky="ew", pady=(8, 2))
+
+        res = W.CardFrame(c, padding=8)
+        res.pack(side="top", fill="both", expand=True, padx=8, pady=(0, 8))
+        ttk.Label(res, text="结果", style="Header.TLabel").pack(anchor="w", pady=(0, 4))
+        self.txt_tax = W.readonly_note(res, height=12, bg="#f0f7f0")
+        ttk.Button(res, text="生成「问 AI」的提示词（结合最新个税政策）",
+                   style="AskAI.TButton",
+                   command=self._open_tax_prompt).pack(anchor="w", pady=(8, 0))
+
+    def on_tax(self):
+        try:
+            wage = float(self.var_tax_wage.get() or 0)
+            bonus = float(self.var_tax_bonus.get() or 0)
+            special_m = float(self.var_tax_special.get() or 0)
+            social_m = float(self.var_tax_social.get() or 0)
+        except ValueError:
+            self._set_note(self.txt_tax, "请输入有效的数字。")
+            return
+        r = E.bonus_tax_compare(wage * 12, bonus,
+                                annual_special=special_m * 12, annual_social=social_m * 12)
+        if "error" in r:
+            self._set_note(self.txt_tax, r["error"])
+            return
+        hints = E.special_deduction_hints(
+            has_children=int(self.var_tax_kids.get()),
+            support_elderly=self.var_tax_elderly.get(),
+            has_loan=self.var_tax_loan.get(),
+            continuing_edu=self.var_tax_edu.get())
+        text = r["note"] + "\n\n【专项附加扣除提醒】\n" + \
+            "\n".join("· " + h for h in hints)
+        self._set_note(self.txt_tax, text)
+
+    def _open_tax_prompt(self):
+        wage = float(self.var_tax_wage.get() or 0)
+        bonus = float(self.var_tax_bonus.get() or 0)
+        W.open_prompt_dialog(
+            self, "问 AI（个税优化）", with_city=True,
+            build_fn=lambda city: E.build_tax_prompt(wage * 12, bonus, city),
+            initial_city=self._profile_city,
+            intro="把这段复制给 AI，它会算年终奖单独vs合并、专项扣除、全年税额，给在个税APP操作的建议。")
+
+    # ============================================================
+    # 本地救助对照（低保 / 边缘 / 特困）
+    # ============================================================
+    def _build_assistance(self, c):
+        box = W.CardFrame(c, title="本地救助对照（我符合低保 / 边缘吗）", padding=10)
+        box.pack(side="top", fill="x", padx=8, pady=4)
+        box.columnconfigure(1, weight=1)
+        ttk.Label(box, text="你所在的城市：").grid(row=0, column=0, sticky="w", pady=3)
+        self.var_assist_city = tk.StringVar(value="北京")
+        ttk.Combobox(box, textvariable=self.var_assist_city,
+                     values=R.CITY_NAMES, width=12).grid(row=0, column=1, sticky="w")
+        ttk.Label(box, text="家庭人均月收入（元）：").grid(row=1, column=0, sticky="w", pady=3)
+        self.var_assist_income = tk.StringVar(value="1500")
+        ttk.Entry(box, textvariable=self.var_assist_income, width=12).grid(row=1, column=1, sticky="w")
+        ttk.Label(box, text="家庭人数：").grid(row=2, column=0, sticky="w", pady=3)
+        self.var_assist_size = tk.IntVar(value=3)
+        ttk.Spinbox(box, from_=1, to=10, textvariable=self.var_assist_size,
+                    width=8).grid(row=2, column=1, sticky="w")
+        ttk.Label(box, text="人均金融资产（元，可选）：").grid(row=3, column=0, sticky="w", pady=3)
+        self.var_assist_asset = tk.StringVar(value="")
+        ttk.Entry(box, textvariable=self.var_assist_asset, width=12).grid(row=3, column=1, sticky="w")
+        ttk.Button(box, text="对照本地救助标准",
+                   command=self.on_assistance_compute).grid(
+            row=4, column=0, columnspan=2, sticky="ew", pady=(8, 2))
+        self.lbl_assist_result = ttk.Label(box, text="—", font=W.FONT_BIG,
+                                           foreground=W.COLOR_ACCENT)
+        self.lbl_assist_result.grid(row=5, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        self.txt_assist = self._make_note(
+            box, height=7, grid=dict(row=6, column=0, columnspan=2, sticky="ew"))
+        ttk.Button(box, text="生成「问 AI」的提示词（查当地最新救助政策）",
+                   style="AskAI.TButton",
+                   command=self._open_assistance_prompt).grid(
+            row=7, column=0, columnspan=2, sticky="ew", pady=(4, 0))
+
+    def on_assistance_compute(self):
+        city = self.var_assist_city.get().strip()
+        try:
+            income = float(self.var_assist_income.get() or 0)
+        except ValueError:
+            self._set_note(self.txt_assist, "人均月收入请填数字。")
+            return
+        size = int(self.var_assist_size.get() or 1)
+        asset_s = self.var_assist_asset.get().strip()
+        asset = float(asset_s) if asset_s else None
+        r = E.check_relief(city, income, family_size=size, asset=asset)
+        if "error" in r:
+            self.lbl_assist_result.config(text="⚠️ 该城市数据未收录", foreground=W.COLOR_DEFICIT)
+            self._set_note(self.txt_assist,
+                f"数据库未收录「{city}」的低保标准，无法对照。建议用下方「问 AI」查当地最新救助政策。")
+            return
+        color = {"surplus": W.COLOR_SURPLUS, "accent": W.COLOR_ACCENT,
+                 "neutral": "#888", "deficit": W.COLOR_DEFICIT}.get(r["color"], W.COLOR_ACCENT)
+        self.lbl_assist_result.config(text=r["head"], foreground=color)
+        if r.get("estimated"):
+            self._set_note(self.txt_assist,
+                f"⚠️【{city}】无精确数据，以下按城市等级估算，建议用「问 AI」查精确。\n\n" + r["note"])
+        else:
+            self._set_note(self.txt_assist, r["note"])
+
+    def _open_assistance_prompt(self):
+        city = self.var_assist_city.get().strip()
+        try:
+            income = float(self.var_assist_income.get() or 0)
+        except ValueError:
+            income = 0
+        W.open_prompt_dialog(
+            self, "问 AI（本地救助）",
+            build_fn=lambda c: E.build_assistance_prompt(
+                city or self._profile_city or "（请填城市）", income,
+                f"{int(self.var_assist_size.get() or 1)} 人家庭"),
+            intro="把这段复制给 AI，填你的城市，它会判断你符合哪档、能领多少、怎么申请。")
 
     # ============================================================
     # 最低工资对照

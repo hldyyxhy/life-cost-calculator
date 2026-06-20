@@ -75,8 +75,11 @@ class ProfilePage(ttk.Frame):
         ttk.Button(bar2, text="📄  保存个人计算结果",
                    command=self.on_export_report).pack(side="right")
 
-    def on_apply(self):
-        """把档案推送到处境页、对比页、三座山页、劳动权益页（各页 apply_profile 自取所需字段）。"""
+    def on_apply(self, silent=False):
+        """把档案推送到处境页、对比页、三座山页、劳动权益页（各页 apply_profile 自取所需字段）。
+
+        silent=True 时不弹窗、同步失败也吞掉——供启动时自动载入使用，避免打扰用户。
+        """
         prof = self.collect()
         # 若填了城市但等级是默认值，先自动识别
         if prof.get("city") and D.city_to_tier(prof["city"]):
@@ -84,9 +87,23 @@ class ProfilePage(ttk.Frame):
             # 回填到控件
             self._vars["tier"].set(prof["tier"])
 
+        synced = self._push_to_pages(prof, silent=silent)
+        P.save_last_profile(prof)   # 确认档案即存为「上次」，下次启动自动载入
+
+        if synced and not silent:
+            msg = (f"档案已同步到：{'、'.join(synced)} 页。\n"
+                   f"城市「{prof.get('city', '未填')}」→ {prof.get('tier', '?')}")
+            if prof.get("city"):
+                msg += "\n\n生成「问AI」提示词时会自动带入城市信息。"
+            messagebox.showinfo("已同步", msg)
+        return prof
+
+    def _push_to_pages(self, prof, silent=False):
+        """把档案同步到处境/对比/三座山/权益页。成功返回已同步标签列表，失败返回 None。"""
         pages = self.app.pages if self.app else {}
         targets = [("处境", "current"), ("对比", "compare"),
-                   ("三座山", "milestones"), ("权益", "rights")]
+                   ("三座山", "milestones"), ("权益", "rights"),
+                   ("求助与反诈", "assist"), ("医保就医", "medical")]
         synced = []
         for label, key in targets:
             pg = pages.get(key)
@@ -95,15 +112,10 @@ class ProfilePage(ttk.Frame):
                     pg.apply_profile(prof)
                     synced.append(label)
                 except Exception as e:
-                    from tkinter import messagebox
-                    messagebox.showerror("同步失败", f"同步到【{label}】时出错：\n{e}")
-                    return
-        if synced:
-            from tkinter import messagebox
-            msg = f"档案已同步到：{'、'.join(synced)} 页。\n城市「{prof.get('city', '未填')}」→ {prof.get('tier', '?')}"
-            if prof.get("city"):
-                msg += "\n\n生成「问AI」提示词时会自动带入城市信息。"
-            messagebox.showinfo("已同步", msg)
+                    if not silent:   # 启动时静默，不打扰
+                        messagebox.showerror("同步失败", f"同步到【{label}】时出错：\n{e}")
+                    return None      # 失败即停
+        return synced
 
     def on_export_report(self):
         """各模块都算完后，询问并保存一份含档案数据 + 各模块分析 + 综合建议的报告。"""
@@ -253,6 +265,7 @@ class ProfilePage(ttk.Frame):
             return
         try:
             P.save_to_file(profile, path)
+            P.save_last_profile(profile)   # 导出的即最近档案，同步为「上次」
             messagebox.showinfo("已保存", f"档案已保存到：\n{path}")
         except OSError as e:
             messagebox.showerror("保存失败", str(e))

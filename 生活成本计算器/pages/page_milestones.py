@@ -259,19 +259,19 @@ class MilestonesPage(ttk.Frame):
             ratio = monthly / ms * 100
             if ratio > 100:
                 self._child_ratio.config(
-                    text=f"⚠️ 占你月结余的 {ratio:.0f}%，将耗尽你的全部结余！",
+                    text=f"⚠️ 占你月结余的 {ratio:.0f}%，会超过你的全部结余，需要另筹来源。",
                     foreground="#c0392b", font=(W.FONT_FAMILY, 12, "bold"))
             elif ratio >= 50:
                 self._child_ratio.config(
-                    text=f"⚠️ 占你月结余的 {ratio:.0f}%，压力较大",
+                    text=f"⚠️ 占你月结余的 {ratio:.0f}%，压力较大，建议提前规划。",
                     foreground="#e67e22", font=(W.FONT_FAMILY, 11, "bold"))
             else:
                 self._child_ratio.config(
-                    text=f"✅ 占你月结余的 {ratio:.0f}%，在你承受范围内",
+                    text=f"✅ 占你月结余的 {ratio:.0f}%，在可承受范围内。",
                     foreground="#1a7d3a", font=(W.FONT_FAMILY, 11, "bold"))
         else:
             self._child_ratio.config(
-                text="⚠️ 你目前没有结余，养娃需要另寻经济来源！",
+                text="⚠️ 你目前没有结余，养娃这部分需要另找经济来源。",
                 foreground="#c0392b", font=(W.FONT_FAMILY, 12, "bold"))
 
     def _get_common_inputs(self):

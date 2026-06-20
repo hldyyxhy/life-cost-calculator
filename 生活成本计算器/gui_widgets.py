@@ -14,6 +14,7 @@ gui_widgets.py —— 可复用 GUI 组件与统一样式
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
+import webbrowser
 
 
 def export_text(default_name, content):
@@ -89,6 +90,35 @@ def apply_style(root):
               background=[("active", "#1f4a8a"), ("pressed", "#163a6e")],
               foreground=[("active", "#ffffff")])
 
+    # —— Checkbutton 指示符：复用 Radiobutton 的圆点（clam 原生）——
+    # 与单选项统一、选中填实心点，避免默认对勾在部分 Windows 渲染下被误看成「叉」。
+    # 自绘的「蓝底白勾」方块方案留作备用，见 备用_Checkbutton对勾风格/。
+    try:
+        def _use_radio_indicator(nodes):
+            out = []
+            for name, opts in nodes:
+                if name == "Checkbutton.indicator":
+                    name = "Radiobutton.indicator"
+                opts = dict(opts)
+                if "children" in opts:
+                    opts["children"] = _use_radio_indicator(opts["children"])
+                out.append((name, opts))
+            return out
+
+        style.layout("TCheckbutton",
+                    _use_radio_indicator(style.layout("TCheckbutton")))
+    except Exception:
+        pass   # 失败则退回 clam 默认外观，不影响功能
+
+
+# 「复制并打开」支持的 AI 平台（默认 DeepSeek）；可按需增删
+AI_PLATFORMS = {
+    "DeepSeek": "https://chat.deepseek.com",
+    "豆包": "https://www.doubao.com/chat",
+    "Kimi": "https://kimi.moonshot.cn",
+}
+DEFAULT_AI = "DeepSeek"
+
 
 def open_prompt_dialog(parent, title, build_fn, with_city=False, intro="",
                        city_label="城市（可选，让 AI 结合本地规定）：",
@@ -141,7 +171,7 @@ def open_prompt_dialog(parent, title, build_fn, with_city=False, intro="",
         try:
             text = build_fn(city_var.get().strip())
         except Exception as e:
-            text = f"生成提示词时出错：{e}\n请检查上方输入是否填了有效数字。"
+            text = f"生成提示词时出错。请回到对应页面，检查输入框是否都填了有效数字，再点「重新生成」。"
         txt.delete("1.0", "end")
         txt.insert("1.0", text)
         hint.config(text="")
@@ -154,18 +184,56 @@ def open_prompt_dialog(parent, title, build_fn, with_city=False, intro="",
     try:
         txt.insert("1.0", build_fn(city_var.get().strip()))
     except Exception as e:  # 读界面数据出错时给出友好提示，不崩
-        txt.insert("1.0", f"生成提示词时出错：{e}\n请检查上方输入是否填了有效数字。")
+        txt.insert("1.0", f"生成提示词时出错。请回到对应页面，检查输入框是否都填了有效数字，再点「重新生成」。")
 
-    # 一键复制按钮放在提示词「正上方」，打开弹窗第一眼就能看到（醒目蓝色）
+    # 操作行：一键复制 / 选 AI 平台后「复制并打开」其网页（默认 DeepSeek）
     action_row = ttk.Frame(top)
     action_row.pack(fill="x", pady=(6, 0))
     ttk.Button(action_row, text="一键复制到剪贴板", style="AskAI.TButton",
                command=do_copy).pack(side="left")
+
+    ai_var = tk.StringVar(value=DEFAULT_AI)
+
+    def do_copy_and_open():
+        do_copy()   # 先把提示词放进剪贴板
+        url = AI_PLATFORMS.get(ai_var.get(), AI_PLATFORMS[DEFAULT_AI])
+        try:
+            webbrowser.open(url)
+            hint.config(text=f"已复制，并打开「{ai_var.get()}」网页，粘贴（Ctrl+V）即可提问")
+        except Exception:
+            hint.config(text=f"已复制。打不开网页时手动访问：{url}")
+
+    open_box = ttk.Frame(action_row)
+    open_box.pack(side="left", padx=(12, 0))
+    ttk.Combobox(open_box, textvariable=ai_var, values=list(AI_PLATFORMS),
+                 state="readonly", width=9).pack(side="left")
+    ttk.Button(open_box, text="复制并打开", style="AskAI.TButton",
+               command=do_copy_and_open).pack(side="left", padx=4)
+
     hint = ttk.Label(action_row, text="", style="Sub.TLabel")
     hint.pack(side="left", padx=8)
     if row is not None:
         ttk.Button(row, text="重新生成", command=regen).pack(side="left", padx=6)
     ttk.Button(bot, text="关闭", command=win.destroy).pack(side="right")
+
+
+def readonly_note(parent, height=6, grid=None, bg="#f7f9fc"):
+    """带垂直滚动条的只读解读框（frame 内 Text + Scrollbar，返回 Text）。
+    各页复用，消除 _make_note 重复。grid 为 dict 时用 grid，否则 pack(fill="x")。"""
+    frame = ttk.Frame(parent)
+    if grid:
+        frame.grid(**grid)
+    else:
+        frame.pack(fill="x")
+    frame.columnconfigure(0, weight=1)
+    tw = tk.Text(frame, height=height, wrap="word", relief="flat",
+                 bg=bg, font=(FONT_FAMILY, 11), padx=8, pady=6)
+    tw.grid(row=0, column=0, sticky="nsew")
+    sb = ttk.Scrollbar(frame, orient="vertical", command=tw.yview)
+    tw.configure(yscrollcommand=sb.set)
+    sb.grid(row=0, column=1, sticky="ns")
+    tw.config(state="disabled")
+    return tw
 
 
 def make_radio_group(parent, title, options, default, descriptions=None,
@@ -326,7 +394,7 @@ class ScrollableFrame(ttk.Frame):
         self.canvas = tk.Canvas(self, borderwidth=0, highlightthickness=0, bg=bg)
         self.vsb = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=self.vsb.set)
-        self.vsb.pack(side="right", fill="y")
+        # 滚动条默认隐藏，内容超高时由 _update_vsb 自动显示
         self.canvas.pack(side="left", fill="both", expand=True)
         self.inner = ttk.Frame(self.canvas)
         self._inner_win = self.canvas.create_window((0, 0), window=self.inner, anchor="nw")
@@ -337,10 +405,25 @@ class ScrollableFrame(ttk.Frame):
 
     def _on_content(self, _):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        self._update_vsb()
 
     def _on_resize(self, event):
         # 内部宽度跟随画布，避免出现水平滚动条
         self.canvas.itemconfig(self._inner_win, width=event.width)
+        self._update_vsb()
+
+    def _update_vsb(self):
+        """内容不超高时隐藏滚动条，超高时才显示（自动隐藏）。"""
+        self.update_idletasks()
+        bbox = self.canvas.bbox("all")
+        if bbox is None:
+            return
+        if (bbox[3] - bbox[1]) > self.canvas.winfo_height():
+            if not self.vsb.winfo_ismapped():
+                self.vsb.pack(side="right", fill="y", before=self.canvas)
+        else:
+            if self.vsb.winfo_ismapped():
+                self.vsb.pack_forget()
 
     def _enter(self, _):
         self.canvas.bind_all("<MouseWheel>", self._on_wheel)

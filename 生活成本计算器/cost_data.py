@@ -272,13 +272,22 @@ MARRIAGE_COST = {
     "婚房首付": {"base": 130000, "unit": "一次性", "note": "90㎡ 首套，首付约15-20%"},
 }
 
+def _equal_installment_ratio(annual_rate, years):
+    """等额本息月供系数 = r(1+r)^n / ((1+r)^n-1)，r=年利率/12，n=年×12。
+    贷款额 × 此系数 = 每月还款额。"""
+    r = annual_rate / 12
+    n = years * 12
+    return r * (1 + r) ** n / ((1 + r) ** n - 1)
+
+
 # 购房（独立于结婚的购房成本，用于展示）—— 90㎡总价、首付、30年月供
+# 月供：贷款70%、30年、商业首套利率3.05%，等额本息（用公式算，利率调整只改参数）
 HOUSE_PURCHASE = {
     tier: {
         "total": TIER_PROFILE[tier]["house_price"] * 90,          # 总价
         "downpayment": TIER_PROFILE[tier]["house_price"] * 90 * 0.20,  # 首付20%
-        # 月供：贷款70%、30年、利率3.05% 等额本息系数约 0.00424/万×贷款额
-        "monthly_loan": TIER_PROFILE[tier]["house_price"] * 90 * 0.70 * 0.00424,
+        "monthly_loan": TIER_PROFILE[tier]["house_price"] * 90 * 0.70
+                        * _equal_installment_ratio(0.0305, 30),
     }
     for tier in TIER_KEYS
 }
@@ -287,7 +296,7 @@ HOUSE_PURCHASE = {
 ADULT_ANNUAL = [
     # 三线基准年度值，按城市系数
     {"key": "社保公积金（个人缴纳）", "base": 18000, "unit": "年度",
-     "note": "养老8%+医疗2%+失业0.5%+公积金(按5%)，按典型工资。"},
+     "note": "养老8%+医疗2%+失业0.5%+公积金(按5%)，按典型工资（非缴费基数下限；与 SOCIAL_INSURANCE_MONTHLY 按下限口径不同）。"},
     {"key": "个人所得税", "base": 1500, "unit": "年度",
      "note": "按城镇私营单位典型工资，扣除五险一金与专项附加后。"},
     {"key": "医疗保健", "base": 2600, "base_old": 12000, "unit": "年度",
@@ -344,6 +353,18 @@ HOUSING = {
     "含水电物业网费": {"base": 350, "note": "水电气+物业+宽带，附加在租金上"},
 }
 
+# 公积金贷款（各地差异大，这里给估算中值；实际以当地公积金中心最新公告为准）
+HOUSING_FUND = {
+    "first_rate": 0.0285,        # 首套年利率（2025 首套 2.85%）
+    "second_rate": 0.03325,      # 二套年利率
+    "commercial_rate": 0.0405,   # 商业贷款年利率（LPR 口径，参考）
+    "balance_multiplier": 20,    # 可贷额 = 公积金账户余额 × 此倍数（各地 15-20）
+    "max_loan": {                # 各 tier 公积金最高可贷额度（元，估算）
+        "一线": 1200000, "新一线": 800000, "二线": 600000,
+        "三线": 500000, "四线": 400000, "五线": 400000,
+    },
+}
+
 # 饮食：三线·普通档基准，节俭×0.6、宽裕×1.6
 FOOD = {"base": 1100, "note": "三线·普通档（做饭+部分外卖）"}
 LIFESTYLE_FACTOR = {"节俭": 0.6, "普通": 1.0, "宽裕": 1.6}
@@ -388,7 +409,7 @@ SOCIAL_INSURANCE_MONTHLY = {
 
 # 灵活就业社保月缴（全部自缴，更高；用于无固定单位人群）
 FREELANCE_INSURANCE_MONTHLY = {
-    "一线": 1880, "新一线": 1480, "二线": 1280,
+    "一线": 2050, "新一线": 1480, "二线": 1280,
     "三线": 1000, "四线": 900, "五线": 800,
     "note": "灵活就业：养老20%+医疗约10%（沪杭）/6.5-7%（粤深），按各城市2025下限基数。北京2089、上海2238、深圳1426、广州1507、杭州1454、成都~1450。",
 }
@@ -405,7 +426,7 @@ TYPICAL_WAGE = {
 
 # 最低工资标准（月，2025年10月最新第一档，来自人社部）
 MIN_WAGE = {
-    "一线": 2600, "新一线": 2400, "二线": 2200,
+    "一线": 2700, "新一线": 2400, "二线": 2200,
     "三线": 2000, "四线": 1800, "五线": 1600,
     "note": "2025年10月人社部发布：上海2740、北京2540、深圳2520、天津2510、广东2500、江苏2490、浙江2490、山东2400、四川2330、重庆2330、安徽2320、湖北2210、江西2000等。",
 }
@@ -421,6 +442,18 @@ TAX_BRACKETS = [
     (55000,   0.30,   4410),
     (80000,   0.35,   7160),
     (float('inf'), 0.45, 15160),
+]
+
+# 年度综合所得累进税率（年终奖合并计税 / 年度汇算用）
+TAX_BRACKETS_ANNUAL = [
+    # (上限, 税率, 速算扣除数)
+    (36000,   0.03,      0),
+    (144000,  0.10,   2520),
+    (300000,  0.20,  16920),
+    (420000,  0.25,  31920),
+    (660000,  0.30,  52920),
+    (960000,  0.35,  85920),
+    (float('inf'), 0.45, 181920),
 ]
 
 # 专项附加扣除（月，标准额度）
@@ -482,6 +515,25 @@ def calc_personal_income_tax(taxable_monthly):
             tax = taxable_monthly * rate - quick
             return max(tax, 0.0), rate, quick
     return 0.0, 0.0, 0
+
+
+def calc_annual_income_tax(taxable_annual):
+    """年度综合所得个税（年终奖合并计税 / 年度汇算用）。返回 (税额, 税率, 速算扣除数)。"""
+    if taxable_annual <= 0:
+        return 0.0, 0.0, 0
+    for upper, rate, quick in TAX_BRACKETS_ANNUAL:
+        if taxable_annual <= upper:
+            tax = taxable_annual * rate - quick
+            return max(tax, 0.0), rate, quick
+    return 0.0, 0.0, 0
+
+
+def bonus_monthly_rate(amount_monthly):
+    """年终奖单独计税：按 amount_monthly(=奖金÷12) 在月度税率表找 (税率, 速算扣除数)。"""
+    for upper, rate, quick in TAX_BRACKETS:
+        if amount_monthly <= upper:
+            return rate, quick
+    return 0.45, 15160
 
 
 def fmt_money(x):

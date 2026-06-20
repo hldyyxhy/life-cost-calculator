@@ -17,3 +17,11 @@ desktop.ini
 
 # 备份目录
 备份_*/
+
+# 用户本地数据（档案/债务状态，不入库）
+生活成本计算器/data/
+
+# 打包产物（PyInstaller，可随时重新生成）
+build/
+dist/
+*.exe

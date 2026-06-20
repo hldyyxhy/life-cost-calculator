@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import ttk
 
 import gui_widgets as W
+import profile as P
 from pages.page_profile import ProfilePage
 from pages.page_current import CurrentSituationPage
 from pages.page_compare import ComparePage
@@ -22,7 +23,9 @@ from pages.page_milestones import MilestonesPage
 from pages.page_about import AboutPage
 from pages.page_debt import DebtPage
 from pages.page_rights import RightsPage
-from pages.page_help import HelpPage
+from pages.page_assist import AssistPage
+from pages.page_medical import MedicalPage
+from pages.page_wizard import open_profile_wizard
 
 
 class App:
@@ -51,33 +54,36 @@ class App:
         body = ttk.Frame(root)
         body.pack(fill="both", expand=True, padx=12, pady=6)
 
-        # 左导航栏
-        nav = ttk.Frame(body, width=190, padding=8)
+        # 左导航栏（项目较多，内容超高时可垂直滚动，避免矮窗口下底部按钮被截断）
+        nav = W.ScrollableFrame(body, bg="#e8e8e8")
         nav.pack(side="left", fill="y")
+        nav.configure(width=200)
         nav.pack_propagate(False)
+        c = nav.inner
 
         self.nav_buttons = []
         self.pages = {}
         page_specs = [
             ("① 我的档案\n（填写个人情况）", "profile"),
             ("② 我现在的处境\n（输入月薪算结余）", "current"),
-            ("③ 城市加减法\n（换城市值不值）", "compare"),
+            ("③ 城市与住房\n（换城市/买房决策）", "compare"),
             ("④ 人生三座山\n（结婚/养娃/养老）", "milestones"),
             ("⑤ 借贷真相\n（反算真实年化）", "debt"),
             ("⑥ 劳动权益\n（加班费/失业金/工伤等）", "rights"),
-            ("⑦ 求助渠道\n（出事找谁）", "help"),
-            ("⑧ 关于与数据说明", "about"),
+            ("⑦ 求助与反诈\n（出事找谁/防骗）", "assist"),
+            ("⑧ 医保就医\n（住院报销/慢病）", "medical"),
+            ("⑨ 关于与数据说明", "about"),
         ]
         for text, key in page_specs:
-            btn = ttk.Button(nav, text=text, style="Nav.TButton",
+            btn = ttk.Button(c, text=text, style="Nav.TButton",
                              command=lambda k=key: self.show_page(k))
             btn.pack(fill="x", pady=6)
             self.nav_buttons.append((key, btn))
 
         # 分隔
-        ttk.Separator(nav, orient="horizontal").pack(fill="x", pady=10)
-        ttk.Label(nav, text="数据为公开来源\n估算，仅供参考",
-                  style="Sub.TLabel", justify="left").pack(anchor="w")
+        ttk.Separator(c, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Label(c, text="数据为公开来源估算\n仅供参考",
+                  style="Sub.TLabel", justify="left").pack(anchor="w", pady=(0, 8))
 
         # 右内容区
         self.content = ttk.Frame(body)
@@ -85,7 +91,7 @@ class App:
         self.content.columnconfigure(0, weight=1)
         self.content.rowconfigure(0, weight=1)
 
-        # 创建五个页面，叠在同一格
+        # 创建八个页面，叠在同一格
         self.pages["profile"] = ProfilePage(self.content, app=self)
         self.pages["current"] = CurrentSituationPage(self.content, app=self)
         self.pages["compare"] = ComparePage(self.content)
@@ -93,12 +99,19 @@ class App:
         self.pages["about"] = AboutPage(self.content)
         self.pages["debt"] = DebtPage(self.content)
         self.pages["rights"] = RightsPage(self.content)
-        self.pages["help"] = HelpPage(self.content)
+        self.pages["assist"] = AssistPage(self.content)
+        self.pages["medical"] = MedicalPage(self.content, app=self)
         for p in self.pages.values():
             p.grid(row=0, column=0, sticky="nsew")
 
         # 默认显示档案页（入口）
         self.show_page("profile")
+
+        # 启动时自动载入上次档案 + 债务页输入（静默，不弹窗）
+        self._auto_restore()
+
+        # 首次启动（无上次档案）弹分步填写向导；延后到主窗口显示后再弹
+        self.root.after(120, self._maybe_show_wizard)
 
         # 底部状态栏
         status = ttk.Frame(root, relief="sunken", padding=(12, 4))
@@ -112,10 +125,50 @@ class App:
             btn.state(["!pressed"] if k != key else ["pressed"])
         self.pages[key].tkraise()
 
+    def _auto_restore(self):
+        """启动时载入上次档案 + 债务页输入，档案自动同步到各页（静默，不弹窗）。"""
+        prof = P.load_last_profile()
+        if prof:
+            pg = self.pages.get("profile")
+            if pg is not None:
+                pg.apply_profile(prof)        # 回填档案控件
+                pg.on_apply(silent=True)       # 同步到处境/对比/三座山/权益 + 存 last
+        debt = self.pages.get("debt")
+        if debt is not None and hasattr(debt, "load_state"):
+            debt.load_state()
+
+    def _on_close(self, root):
+        """关闭窗口前兜底保存档案 + 债务页输入，再销毁窗口。"""
+        try:
+            pg = self.pages.get("profile")
+            if pg is not None:
+                P.save_last_profile(pg.collect())
+            debt = self.pages.get("debt")
+            if debt is not None and hasattr(debt, "save_state"):
+                debt.save_state()
+        except Exception:
+            pass
+        root.destroy()
+
+    # ---------- 首次填写向导 ----------
+    def _maybe_show_wizard(self):
+        """首次启动（无上次档案）弹分步填写向导；老用户有档案则跳过。"""
+        try:
+            if P.load_last_profile() is None:
+                open_profile_wizard(self.root, self)
+        except Exception:
+            # 向导出错也别反复弹：存一份默认档案占位
+            try:
+                P.save_last_profile(P.default_profile())
+            except Exception:
+                pass
+
 
 def main():
     root = tk.Tk()
-    App(root)
+    app = App(root)
+    # 点窗口「×」关闭时，先保存再销毁（此时控件/变量仍在，可读取）
+    root.protocol("WM_DELETE_WINDOW", lambda: app._on_close(root))
     root.mainloop()
 
 

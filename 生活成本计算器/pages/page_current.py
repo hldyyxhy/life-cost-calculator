@@ -35,7 +35,9 @@ class CurrentSituationPage(ttk.Frame):
             "age": self.var_age, "tier": self.var_tier, "wage": self.var_wage,
             "insurance": self.var_ins, "housing": self.var_housing,
             "food": self.var_food, "has_car": self.var_car,
-            "num_children": self.var_kids, "child_age_group": self.var_kid_age,
+            "num_children": self.var_kids,
+            "child_baby": self.var_child_baby, "child_kg": self.var_child_kg,
+            "child_school": self.var_child_school, "child_uni": self.var_child_uni,
             "support_elderly": self.var_elderly, "support_family": self.var_family,
             "has_housing_deduction": self.var_house_dedu,
             "has_continuing_education": self.var_cont_edu,
@@ -128,11 +130,20 @@ class CurrentSituationPage(ttk.Frame):
         ttk.Spinbox(form, from_=0, to=6, textvariable=self.var_kids,
                     width=8).grid(row=12, column=1, sticky="w")
 
-        ttk.Label(form, text="子女年龄段：").grid(row=13, column=0, sticky="w", pady=3)
-        self.var_kid_age = tk.StringVar(value="中小学（6-18岁）")
-        ttk.Combobox(form, textvariable=self.var_kid_age, width=16,
-                     values=list(D.CHILD_CARE_MONTHLY_BASE.keys()),
-                     state="readonly").grid(row=13, column=1, sticky="w")
+        ttk.Label(form, text="各年龄段人数：").grid(row=13, column=0, sticky="w", pady=3)
+        self.var_child_baby = tk.IntVar(value=0)
+        self.var_child_kg = tk.IntVar(value=0)
+        self.var_child_school = tk.IntVar(value=0)
+        self.var_child_uni = tk.IntVar(value=0)
+        ages = ttk.Frame(form)
+        ages.grid(row=13, column=1, sticky="w")
+        for i, (lbl, var) in enumerate([
+                ("婴幼儿", self.var_child_baby), ("幼儿园", self.var_child_kg),
+                ("中小学", self.var_child_school), ("大学", self.var_child_uni)]):
+            ttk.Label(ages, text=lbl).grid(row=0, column=i * 2, sticky="w",
+                                           padx=(8 if i else 0, 2))
+            ttk.Spinbox(ages, from_=0, to=6, textvariable=var, width=3).grid(
+                row=0, column=i * 2 + 1)
 
         self.var_elderly = tk.BooleanVar(value=False)
         ttk.Checkbutton(form, text="赡养老人（+3000元/月扣除）",
@@ -305,22 +316,24 @@ class CurrentSituationPage(ttk.Frame):
         # 6. 白话解读（带垂直滚动条）
         ttk.Label(res, text="处境解读", style="Header.TLabel").grid(
             row=9, column=0, sticky="w", pady=(8, 2))
-        interp_frame = ttk.Frame(res)
-        interp_frame.grid(row=10, column=0, sticky="ew", pady=2)
-        interp_frame.columnconfigure(0, weight=1)
-        self.txt_interp = tk.Text(interp_frame, height=9, wrap="word", relief="flat",
-                                  font=(W.FONT_FAMILY, 11), bg="#f7f9fc",
-                                  padx=8, pady=6)
-        self.txt_interp.grid(row=0, column=0, sticky="ew")
-        sb_interp = ttk.Scrollbar(interp_frame, orient="vertical",
-                                  command=self.txt_interp.yview)
-        self.txt_interp.configure(yscrollcommand=sb_interp.set)
-        sb_interp.grid(row=0, column=1, sticky="ns")
-        self.txt_interp.config(state="disabled")
+        self.txt_interp = W.readonly_note(
+            res, height=9, grid=dict(row=10, column=0, sticky="ew", pady=2))
         ttk.Button(res, text="生成「问 AI」的提示词（让 AI 详细解读你的处境）",
                    style="AskAI.TButton",
                    command=self._open_current_prompt).grid(
             row=11, column=0, sticky="ew", pady=(8, 2))
+
+    def _children_by_age(self):
+        """从 4 个年龄段 spin 组装 {段: 人数}，供计算和问 AI 提示词使用。"""
+        segs = list(D.CHILD_CARE_MONTHLY_BASE.keys())
+        attrs = ["var_child_baby", "var_child_kg", "var_child_school", "var_child_uni"]
+        out = {}
+        for seg, attr in zip(segs, attrs):
+            try:
+                out[seg] = int(getattr(self, attr).get() or 0)
+            except (ValueError, tk.TclError):
+                out[seg] = 0
+        return out
 
     def _open_current_prompt(self):
         def build(city):
@@ -330,7 +343,8 @@ class CurrentSituationPage(ttk.Frame):
                 self.var_housing.get(), self.var_food.get(),
                 self.var_car.get(), int(self.var_kids.get()),
                 self.var_elderly.get(),
-                float(self.var_savings.get() or "0"), city)
+                float(self.var_savings.get() or "0"), city,
+                children_by_age=self._children_by_age())
         W.open_prompt_dialog(
             self, "问 AI 的提示词（我的处境解读）", with_city=True,
             build_fn=build, initial_city=self._profile_city,
@@ -361,7 +375,7 @@ class CurrentSituationPage(ttk.Frame):
             has_car=self.var_car.get(),
             insurance_mode=self.var_ins.get(),
             num_children=self.var_kids.get(),
-            child_age_group=self.var_kid_age.get(),
+            children_by_age=self._children_by_age(),
             support_elderly=self.var_elderly.get(),
             has_housing_deduction=self.var_house_dedu.get(),
             has_continuing_education=self.var_cont_edu.get(),
@@ -429,12 +443,12 @@ class CurrentSituationPage(ttk.Frame):
                 foreground=W.COLOR_DEFICIT)
         else:
             self._risk_labels["gap"].config(
-                text=f"· 应急金已达标 ✅（超下限 {-gap:,} 元）",
+                text=f"· ✅ 应急金已达标（超下限 {-gap:,} 元）",
                 foreground=W.COLOR_SURPLUS)
         sev = risk["severe_illness_risk"]
         if sev == "high":
             self._risk_labels["illness"].config(
-                text="· ⚠️ 大病风险高：一次重病自付约 5~10 万，你的存款不足 5 万！",
+                text="· ⚠️ 大病风险较高：一次重病自付约 5~10 万，你的存款不足 5 万，建议优先办医保 / 惠民保。",
                 foreground=W.COLOR_DEFICIT)
         elif sev == "medium":
             self._risk_labels["illness"].config(
@@ -442,7 +456,7 @@ class CurrentSituationPage(ttk.Frame):
                 foreground="#e67e22")
         else:
             self._risk_labels["illness"].config(
-                text="· 大病风险低：存款 >10 万，能扛住一次重病自付 ✅",
+                text="· ✅ 大病风险较低：存款 >10 万，能扛住一次重病自付",
                 foreground=W.COLOR_SURPLUS)
 
         # 工资去向堆叠条（直接读结构化 breakdown，不再串匹配）
