@@ -16,7 +16,7 @@ import cost_data as D
 import calc_engine as E
 import gui_widgets as W
 
-_WARN = ("⚠️ 当前房价波动剧烈，以下为粗算估算（房价/租金涨幅是假设、未含税费维修空置），"
+_WARN = ("⚠️ 当前房价波动剧烈，以下为粗算估算（未含税费维修空置），"
          "重要决策请用各页「问 AI」结合你关注的具体小区和最新行情再判断。")
 
 
@@ -24,6 +24,7 @@ class ComparePage(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
         self._profile_city = ""  # 从档案同步的城市名，用于提示词
+        self._profile = {}       # 缓存整个档案，供「问 AI」提示词补年龄/家庭/存款/负债
         # 顶部红字警示（跨 tab 可见）
         warn = ttk.Frame(self, padding=(10, 8, 10, 0))
         warn.pack(fill="x")
@@ -41,6 +42,7 @@ class ComparePage(ttk.Frame):
     # ---------- 档案载入 ----------
     def apply_profile(self, prof):
         """从档案同步：工资/城市/生活方式到 tab1；城市等级同步到 tab②③。"""
+        self._profile = prof
         self._profile_city = prof.get("city", "")
         wage = prof.get("wage", "")
         if wage == "":
@@ -149,8 +151,8 @@ class ComparePage(ttk.Frame):
 
         ttk.Label(res, text="结论", style="Header.TLabel").grid(
             row=3, column=0, sticky="w", pady=(8, 2))
-        self.txt_conclusion = W.readonly_note(
-            res, height=5, grid=dict(row=4, column=0, sticky="ew", pady=2), bg="#f0f7f0")
+        self.txt_conclusion = W.RichNote(
+            res, height=5, bg="#f0f7f0", grid=dict(row=4, column=0, sticky="ew", pady=2))
         ttk.Button(res, text="生成「问 AI」的提示词（让 AI 帮你判断换城市值不值）",
                    style="AskAI.TButton",
                    command=self._open_compare_prompt).grid(
@@ -220,25 +222,22 @@ class ComparePage(ttk.Frame):
                 [cr["item"], f"{cr['amount']:,}",
                  diff_str, f"{b_amt:,}"])
 
-        est = result["estimated_wage"]
-        text = result["comparison_text"]
-        text += f"\n（预设目标城市工资：按比例估算约 {est:,} 元/月）"
-        self._set_text(text)
+        self.txt_conclusion.set_rich(result["rich"])
 
     def _set_text(self, text):
-        self._set_note(self.txt_conclusion, text)
+        self.txt_conclusion.set_text(text)
 
     def _set_note(self, tw, text):
-        tw.config(state="normal")
-        tw.delete("1.0", "end")
-        tw.insert("1.0", text)
-        tw.config(state="disabled")
+        """纯文本回落（RichNote.set_text；兼容旧的 Text 用法）。"""
+        tw.set_text(text)
 
     def _open_compare_prompt(self):
         def build(city):
             return E.build_compare_prompt(
                 self.var_tier_a.get(), self.var_tier_b.get(),
-                float(self.var_wage.get()), city)
+                float(self.var_wage.get()), city,
+                housing=self.var_housing.get(), food=self.var_food.get(),
+                has_car=self.var_car.get(), insurance=self.var_ins.get())
         W.open_prompt_dialog(
             self, "问 AI 的提示词（换城市值不值）", with_city=True,
             build_fn=build, initial_city=self._profile_city,
@@ -286,7 +285,7 @@ class ComparePage(ttk.Frame):
         res = W.CardFrame(c, padding=8)
         res.pack(side="top", fill="both", expand=True, padx=8, pady=(0, 8))
         ttk.Label(res, text="结果", style="Header.TLabel").pack(anchor="w", pady=(0, 4))
-        self.txt_br = W.readonly_note(res, height=12, bg="#f0f7f0")
+        self.txt_br = W.RichNote(res, height=12, bg="#f0f7f0")
         ttk.Button(res, text="生成「问 AI」的提示词（结合最新房价/利率帮你判断）",
                    style="AskAI.TButton",
                    command=self._open_buy_rent_prompt).pack(anchor="w", pady=(8, 0))
@@ -301,13 +300,16 @@ class ComparePage(ttk.Frame):
             self._set_note(self.txt_br, "请输入有效的数字。")
             return
         r = E.compare_buy_rent(tier, years=years, house_area=area, down_ratio=down_ratio)
-        self._set_note(self.txt_br, r["note"])
+        self.txt_br.set_rich(r["rich"])
 
     def _open_buy_rent_prompt(self):
         W.open_prompt_dialog(
             self, "问 AI（买房还是租房）", with_city=True,
             build_fn=lambda city: E.build_buy_rent_prompt(
-                self.var_br_tier.get(), int(self.var_br_years.get()), city),
+                self.var_br_tier.get(), int(self.var_br_years.get()),
+                int(self.var_br_area.get()),
+                float(self.var_br_down.get().rstrip("%")) / 100, city,
+                profile=self._profile),
             initial_city=self._profile_city,
             intro="把这段复制给 AI，填你关注的具体城市，它会结合最新房价/租金/利率帮你算买还是租。")
 
@@ -348,7 +350,7 @@ class ComparePage(ttk.Frame):
         res = W.CardFrame(c, padding=8)
         res.pack(side="top", fill="both", expand=True, padx=8, pady=(0, 8))
         ttk.Label(res, text="结果", style="Header.TLabel").pack(anchor="w", pady=(0, 4))
-        self.txt_fund = W.readonly_note(res, height=10, bg="#f0f7f0")
+        self.txt_fund = W.RichNote(res, height=10, bg="#f0f7f0")
         ttk.Button(res, text="生成「问 AI」的提示词（查当地最新公积金政策）",
                    style="AskAI.TButton",
                    command=self._open_fund_prompt).pack(anchor="w", pady=(8, 0))
@@ -364,13 +366,15 @@ class ComparePage(ttk.Frame):
             self._set_note(self.txt_fund, "请输入有效的数字。")
             return
         r = E.housing_fund_loan(tier, balance=balance, monthly_contribution=contrib, years=years)
-        self._set_note(self.txt_fund, r["note"])
+        self.txt_fund.set_rich(r["rich"])
 
     def _open_fund_prompt(self):
         W.open_prompt_dialog(
             self, "问 AI（公积金贷款）", with_city=True,
             build_fn=lambda city: E.build_fund_prompt(
-                self.var_fund_tier.get(), float(self.var_fund_balance.get() or 0), city),
+                self.var_fund_tier.get(), float(self.var_fund_balance.get() or 0),
+                float(self.var_fund_contrib.get() or 0), int(self.var_fund_years.get()), city,
+                profile=self._profile),
             initial_city=self._profile_city,
             intro="把这段复制给 AI，填你的城市，它会查当地最新公积金政策帮你算可贷额和月供。")
 
@@ -407,7 +411,7 @@ class ComparePage(ttk.Frame):
         res = W.CardFrame(c, padding=8)
         res.pack(side="top", fill="both", expand=True, padx=8, pady=(0, 8))
         ttk.Label(res, text="结果", style="Header.TLabel").pack(anchor="w", pady=(0, 4))
-        self.txt_rs = W.readonly_note(res, height=10, bg="#f0f7f0")
+        self.txt_rs = W.RichNote(res, height=10, bg="#f0f7f0")
         ttk.Button(res, text="生成「问 AI」的提示词（结合当前 LPR 分析）",
                    style="AskAI.TButton",
                    command=self._open_rate_stress_prompt).pack(anchor="w", pady=(8, 0))
@@ -421,11 +425,13 @@ class ComparePage(ttk.Frame):
             self._set_note(self.txt_rs, "请输入有效的数字。")
             return
         r = E.rate_stress_test(principal, base_rate=base_rate, years=years)
-        self._set_note(self.txt_rs, r["note"])
+        self.txt_rs.set_rich(r["rich"])
 
     def _open_rate_stress_prompt(self):
         W.open_prompt_dialog(
-            self, "问 AI（利率压力测试）",
+            self, "问 AI（利率压力测试）", with_city=True,
             build_fn=lambda city: E.build_rate_stress_prompt(
-                float(self.var_rs_principal.get() or 0), float(self.var_rs_rate.get()) / 100),
-            intro="把这段复制给 AI，它会结合当前 LPR 走势帮你分析利率风险、选固定还是浮动。")
+                float(self.var_rs_principal.get() or 0), float(self.var_rs_rate.get()) / 100,
+                int(self.var_rs_years.get()), city, profile=self._profile),
+            initial_city=self._profile_city,
+            intro="把这段复制给 AI，填你的城市，它会结合当前 LPR 走势帮你分析利率风险、选固定还是浮动。")

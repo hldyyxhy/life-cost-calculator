@@ -34,16 +34,18 @@ class DebtPage(ttk.Frame):
         self._build_spiral()
         self._build_health()
         self._nb.select(0)
+        self._profile = {}   # 缓存档案，供「问 AI」提示词补年龄/家庭/存款/负债
+
+    def apply_profile(self, prof):
+        """接收档案同步（只缓存；借贷页的具体输入由用户在本页填）。"""
+        self._profile = prof or {}
 
     # ---------- 通用：只读解读 Text ----------
     def _make_note(self, parent, height=6, grid=None):
         return W.readonly_note(parent, height=height, grid=grid)
 
     def _set_note(self, tw, text):
-        tw.config(state="normal")
-        tw.delete("1.0", "end")
-        tw.insert("1.0", text)
-        tw.config(state="disabled")
+        tw.set_smart_text(text)
 
     # ============================================================
     # ① 反算真实年化（原功能，整体保留）
@@ -524,14 +526,14 @@ class DebtPage(ttk.Frame):
             self, "问 AI 的提示词（借贷真实年化）",
             build_fn=lambda city: E.build_loan_apr_prompt(
                 float(self.var_principal.get()), float(self.var_monthly.get()),
-                int(self.var_periods.get())))
+                int(self.var_periods.get()), profile=self._profile))
 
     def _open_compare_prompt(self):
         W.open_prompt_dialog(
             self, "问 AI 的提示词（还款方式对比）",
             build_fn=lambda city: E.build_compare_methods_prompt(
                 float(self.var_cmp_p.get()), float(self.var_cmp_apr.get()),
-                int(self.var_cmp_n.get())))
+                int(self.var_cmp_n.get()), profile=self._profile))
 
     def _open_affordable_prompt(self):
         inc_s = self.var_aff_income.get().strip()
@@ -540,7 +542,7 @@ class DebtPage(ttk.Frame):
             self, "问 AI 的提示词（可承受负债）",
             build_fn=lambda city: E.build_affordable_debt_prompt(
                 float(self.var_aff_surplus.get()), float(self.var_aff_apr.get()),
-                int(self.var_aff_n.get()), income))
+                int(self.var_aff_n.get()), income, profile=self._profile))
 
     def _open_snowball_prompt(self):
         W.open_prompt_dialog(
@@ -553,7 +555,7 @@ class DebtPage(ttk.Frame):
             self, "问 AI 的提示词（以贷养贷螺旋）",
             build_fn=lambda city: E.build_spiral_prompt(
                 float(self.var_sp_init.get()), float(self.var_sp_rate.get()),
-                int(self.var_sp_months.get()), float(self.var_sp_pay.get())))
+                int(self.var_sp_months.get()), float(self.var_sp_pay.get()), profile=self._profile))
 
     # ============================================================
     # ⑥ 债务健康仪表盘
@@ -620,7 +622,8 @@ class DebtPage(ttk.Frame):
             self, "问 AI（债务健康）",
             build_fn=lambda c: E.build_debt_health_prompt(
                 float(self.var_health_debt.get() or 0), float(self.var_health_income.get() or 0),
-                float(self.var_health_pay.get() or 0), float(self.var_health_apr.get()) / 100),
+                float(self.var_health_pay.get() or 0), float(self.var_health_apr.get()) / 100,
+                profile=self._profile),
             intro="把这段复制给 AI，它会评估你的债务健康、给摆脱债务的步骤。")
 
     # ============================================================

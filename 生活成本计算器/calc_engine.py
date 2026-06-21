@@ -254,7 +254,7 @@ def compute_current_situation(age, wage_pretax, tier, housing, food_level,
                               num_children=0, children_by_age=None,
                               support_elderly=False, has_housing_deduction=False,
                               has_continuing_education=False,
-                              support_family_monthly=0):
+                              support_family_monthly=0, overrides=None):
     """
     计算当前月度生存成本、到手收入与结余。
 
@@ -291,7 +291,8 @@ def compute_current_situation(age, wage_pretax, tier, housing, food_level,
     breakdown = {}  # 类别 -> 月额（结构化，供 UI 直接读，避免按中文串匹配）
 
     def add_cost(item, amount, note="", category=None):
-        cost_rows.append({"item": item, "amount": round(amount), "note": note})
+        cost_rows.append({"item": item, "amount": round(amount), "note": note,
+                          "_cat": category})
         if category:
             breakdown[category] = breakdown.get(category, 0) + round(amount)
 
@@ -349,6 +350,16 @@ def compute_current_situation(age, wage_pretax, tier, housing, food_level,
     if support_family_monthly > 0:
         add_cost("给老家生活费", support_family_monthly,
                  f"在外务工给父母/家庭的生活费，月 {support_family_monthly:,.0f} 元", "给老家")
+
+    # —— 用户实际值覆盖估算（清楚自己情况的人可改；overrides: {类别: 实际月额}）——
+    if overrides:
+        for cat, val in overrides.items():
+            if val is None or cat not in breakdown:
+                continue
+            cost_rows = [r for r in cost_rows if r.get("_cat") != cat]
+            cost_rows.append({"item": f"{cat}（按实际）", "amount": round(val),
+                              "note": "你填的实际金额", "_cat": cat})
+            breakdown[cat] = round(val)
 
     cost_total = sum(r["amount"] for r in cost_rows)
 
@@ -702,6 +713,19 @@ def compare_cities(wage, current_tier, target_tier,
         elif income_diff < 0:
             lines.append("（主要原因是收入下降幅度超过生活成本降低。）")
 
+    # 富文本段落（结果区 RichNote 渲染）
+    rich = [{"t": f"对比【{current_tier}】vs【{target_tier}】\n", "tag": "h"}]
+    if surplus_diff > 0:
+        inc = f"少了 {_money(abs(income_diff))}" if income_diff < 0 else f"多了 {_money(income_diff)}"
+        cst = f"低了 {_money(abs(cost_diff))}" if cost_diff < 0 else f"高了 {_money(cost_diff)}"
+        rich.append({"t": f"移到【{target_tier}】每月结余增加 {_money(surplus_diff)} ✅\n", "tag": "big"})
+        rich.append({"t": f"（收入{inc}，生活成本{cst}）\n", "tag": "muted"})
+    elif surplus_diff == 0:
+        rich.append({"t": f"移到【{target_tier}】收支基本不变\n", "tag": "normal"})
+    else:
+        rich.append({"t": f"移到【{target_tier}】每月结余减少 {_money(-surplus_diff)} ⚠\n", "tag": "bigbad"})
+        rich.append({"t": "（当前城市更优）\n", "tag": "muted"})
+    rich.append({"t": f"\n预设目标城市工资：按比例估算约 {_money(estimated_wage)}/月", "tag": "normal"})
     return {
         "current": current,
         "target": target,
@@ -710,6 +734,7 @@ def compare_cities(wage, current_tier, target_tier,
         "cost_diff": round(cost_diff),
         "surplus_diff": round(surplus_diff),
         "comparison_text": "\n".join(lines),
+        "rich": rich,
     }
 
 
@@ -1454,7 +1479,7 @@ def build_overtime_prompt(wage, weekday_ot, weekend_ot, holiday_ot,
     )
 
 
-def build_loan_apr_prompt(principal, monthly, periods):
+def build_loan_apr_prompt(principal, monthly, periods, profile=None):
     """真实年化反算 → 问 AI 的提示词（判断是否高利贷、维权）。"""
     return (
         "请以资深金融消费者权益保护专家的口吻，用大白话帮我判断这笔贷款正不正常、"
@@ -1463,6 +1488,7 @@ def build_loan_apr_prompt(principal, monthly, periods):
         f"- 借款本金：{principal:,.0f} 元\n"
         f"- 每月还款：{monthly:,.0f} 元\n"
         f"- 期数：{periods} 个月\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 反算这笔贷款的真实年化利率（IRR 复利口径）和名义年化，给出计算过程。\n"
         "2. 按真实年化判断它属于哪类（正常 / 偏高 / 高利贷 24%-36% / 超过 36% 红线），"
@@ -1475,7 +1501,7 @@ def build_loan_apr_prompt(principal, monthly, periods):
     )
 
 
-def build_compare_methods_prompt(principal, apr_pct, periods):
+def build_compare_methods_prompt(principal, apr_pct, periods, profile=None):
     """还款方式对比 → 问 AI 的提示词。"""
     return (
         "请以资深金融顾问的口吻，用大白话帮我讲清楚两种还款方式的区别，我快被绕晕了。"
@@ -1484,6 +1510,7 @@ def build_compare_methods_prompt(principal, apr_pct, periods):
         f"- 本金：{principal:,.0f} 元\n"
         f"- 名义年化：{apr_pct:.1f}%（机构报的价）\n"
         f"- 期数：{periods} 个月\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 分别按「等额本息」和「等本等息（消费分期常见的固定手续费制）」算："
         "每月还多少、总利息多少、真实年化（IRR）多少，给计算过程。\n"
@@ -1496,7 +1523,7 @@ def build_compare_methods_prompt(principal, apr_pct, periods):
     )
 
 
-def build_affordable_debt_prompt(surplus, apr_pct, periods, income=None):
+def build_affordable_debt_prompt(surplus, apr_pct, periods, income=None, profile=None):
     """可承受负债上限 → 问 AI 的提示词。"""
     income_line = (f"- 月薪：{income:,.0f} 元\n" if income
                    else "- 月薪：（我没填，请按一般情况估算）\n")
@@ -1508,6 +1535,7 @@ def build_affordable_debt_prompt(surplus, apr_pct, periods, income=None):
         + income_line +
         f"- 想借的名义年化：{apr_pct:.1f}%\n"
         f"- 想借的期数：{periods} 个月\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 按健康负债的标准（月还款不超过月结余 / 收入的合理比例），"
         "我最多能借多少本金？给计算。\n"
@@ -1537,7 +1565,7 @@ def build_debt_payoff_prompt(debts_desc, extra):
     )
 
 
-def build_spiral_prompt(init, apr_pct, months, pay):
+def build_spiral_prompt(init, apr_pct, months, pay, profile=None):
     """以贷养贷螺旋 → 问 AI 的提示词。"""
     return (
         "请以资深债务顾问的口吻，用大白话帮我判断我是不是陷入了「以贷养贷」的恶性循环、"
@@ -1546,6 +1574,7 @@ def build_spiral_prompt(init, apr_pct, months, pay):
         f"- 目前欠着：{init:,.0f} 元\n"
         f"- 这笔债的年化：{apr_pct:.1f}%\n"
         f"- 每月我实际能还：{pay:,.0f} 元\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 按这个还款力度，我的债务是在涨还是在降？大概多久会翻倍？给计算。\n"
         "2. 我算不算陷入了「借新还旧 / 以贷养贷」的螺旋？严重程度如何？\n"
@@ -1557,7 +1586,7 @@ def build_spiral_prompt(init, apr_pct, months, pay):
     )
 
 
-def build_min_wage_prompt(wage, tier, city=""):
+def build_min_wage_prompt(wage, tier, city="", profile=None):
     """最低工资对照 → 问 AI 的提示词。"""
     city_line = (f"- 所在城市：{city}" if city
                  else "- 所在城市：（请按我所在城市等级对应的典型城市分析）")
@@ -1568,8 +1597,9 @@ def build_min_wage_prompt(wage, tier, city=""):
         f"- 我的月薪：{wage:,.0f} 元\n"
         f"- 所在城市等级：{tier}\n"
         f"{city_line}\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
-        "1. 我所在地区目前的最低工资标准大概是多少？我的工资有没有低于这个底线？\n"
+        "1. 我所在地区目前的最低工资标准（精确值）是多少？我的工资有没有低于这个底线？\n"
         "2. 如果低于，这是违法的——法律依据是什么（如《劳动法》第 48 条）？\n"
         "3. 就算没低于，我的工资在当地处在什么水平？议价空间大不大？\n"
         "4. 如果我想争取合理工资或维权，具体怎么做（找谁、打什么电话、准备什么）？\n"
@@ -1578,22 +1608,31 @@ def build_min_wage_prompt(wage, tier, city=""):
     )
 
 
-def build_unemployment_prompt(city=""):
-    """失业金（外包给 AI 查当地标准）→ 问 AI 的提示词。"""
+def build_unemployment_prompt(city="", years="", wage="", reason="", profile=None):
+    """失业金（外包给 AI 查当地标准）→ 问 AI 的提示词。
+    years/wage/reason 可选：界面有就传，没有让 AI 问。"""
     city_line = (f"- 我所在的城市：{city}" if city
                  else "- 我所在的城市：（我稍后告诉你，请先问我）")
+    try:
+        yr = float(years)
+        years_line = f"- 失业保险累计缴费年限：{yr:.0f} 年"
+    except (TypeError, ValueError):
+        years_line = "- 失业保险累计缴费年限：（请问我，这决定能领几个月）"
+    try:
+        wage_line = f"- 上份工作月工资：{float(wage):,.0f} 元" if wage else "- 上份工作月工资：（请问我）"
+    except (TypeError, ValueError):
+        wage_line = "- 上份工作月工资：（请问我）"
     return (
         "请以资深社保 / 劳动保障专家的口吻，用大白话帮我算清楚：我被裁（或快失业）了，"
         "能领多少失业金、领多久、怎么领。情况如下：\n\n"
         "【我的情况】\n"
         f"{city_line}\n"
-        "- 社保（失业保险）缴费年限：（请问我，或我稍后补充）\n"
-        "- 上份工作的月工资：（请问我）\n"
-        "- 离职原因：是公司辞退 / 合同到期不续签 / 协商解除 / 还是个人原因？"
-        "（请问我，这关系到能不能领）\n\n"
+        f"{years_line}\n"
+        f"{wage_line}\n"
+        f"- 离职原因：{reason or '（请问我：公司辞退 / 合同到期不续签 / 协商解除 / 个人原因，这关系到能不能领）'}\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
-        "1. 先问清楚我上面还缺的信息，然后按我所在城市的最新规定，算我大概能领多少失业金、"
-        "能领几个月。\n"
+        "1. 按我所在城市的最新规定，算我大概能领多少失业金、能领几个月。\n"
         "2. 领失业金需要满足什么条件？我的情况符不符合？\n"
         "3. 具体怎么申领？去哪里办、带什么材料、能线上办吗？\n"
         "4. 领失业金期间，我的医保 / 养老保险怎么办？有没有其他配套待遇？\n"
@@ -1602,8 +1641,9 @@ def build_unemployment_prompt(city=""):
     )
 
 
-def build_subsidy_prompt(city=""):
-    """灵活就业社保补贴（4050，外包给 AI）→ 问 AI 的提示词。"""
+def build_subsidy_prompt(city="", profile=None):
+    """灵活就业社保补贴（4050，外包给 AI）→ 问 AI 的提示词。
+    年龄/社保等从 profile 的事实段带入（_profile_brief），性别档案未存则让 AI 问。"""
     city_line = (f"- 我所在的城市：{city}" if city
                  else "- 我所在的城市：（我稍后告诉你，请先问我）")
     return (
@@ -1612,12 +1652,13 @@ def build_subsidy_prompt(city=""):
         "情况如下：\n\n"
         "【我的情况】\n"
         f"{city_line}\n"
-        "- 我的年龄、性别：（请问我，补贴对年龄有要求）\n"
-        "- 我现在是不是以灵活就业身份自己缴社保？（请问我）\n"
-        "- 我有没有被认定为「就业困难人员」？（请问我）\n\n"
+        "- 性别：（请问我，4050 对性别和年龄都有要求，一般女≥40/男≥50）\n"
+        "- 是否以灵活就业身份自己缴职工养老+医保？（居民社保不算，请确认）\n"
+        "- 我有没有被认定为「就业困难人员」？（请问我，这是申领前提）\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
-        "1. 先问清楚我上面缺的信息，然后按我所在城市的最新规定，判断我能不能享受这个补贴。\n"
-        "2. 如果能，补贴标准大概多少（补社保缴费的百分之几、每月 / 每年封顶多少）？能享受多久？\n"
+        "1. 按我所在城市的最新规定，结合我的年龄/性别/社保情况，判断我能不能享受这个补贴。\n"
+        "2. 如果能，补贴标准大概多少、能享受多久？\n"
         "3. 怎么申请？去哪里办、带什么材料、流程是什么？\n"
         "4. 有没有我容易忽略的坑（比如要先做灵活就业登记、认定就业困难人员等）？\n"
         "5. 除了这个补贴，我这种情况还有没有别的能领的（如创业补贴、技能补贴）？\n\n"
@@ -1756,8 +1797,10 @@ def build_antifraud_prompt(key, city=""):
 
 def build_current_situation_prompt(age, tier, wage, ins, housing, food,
                                   has_car, num_kids, support_elderly, savings, city="",
-                                  children_by_age=None):
-    """处境解读 → 问 AI 的提示词（让 AI 详细诊断处境、给可执行建议，代替内置长解读）。"""
+                                  children_by_age=None, family_monthly=0,
+                                  has_partner=False, partner_wage=0, partner_ins=""):
+    """处境解读 → 问 AI 的提示词（让 AI 详细诊断处境、给可执行建议，代替内置长解读）。
+    family_monthly/has_partner/partner_wage/partner_ins 可选：界面有就传。"""
     car_cn = "有车（含养车成本）" if has_car else "无车"
     elder_cn = "需要赡养老人" if support_elderly else "暂不需要赡养老人"
     if num_kids:
@@ -1769,6 +1812,12 @@ def build_current_situation_prompt(age, tier, wage, ins, housing, food,
     savings_cn = f"{savings:,.0f} 元" if savings else "几乎没存款"
     city_line = (f"- 所在城市：{city}（等级 {tier}）" if city
                  else f"- 所在城市等级：{tier}（具体城市请结合该等级典型城市分析，或先问我）")
+    extra_lines = ""
+    if family_monthly:
+        extra_lines += f"- 每月给老家：{family_monthly:,.0f} 元\n"
+    if has_partner:
+        pw_cn = f"伴侣月薪约 {partner_wage:,.0f} 元" + (f"（{partner_ins}）" if partner_ins else "")
+        extra_lines += f"- {pw_cn}（家庭双收入）\n"
     return (
         "请以资深个人理财顾问和生活规划师的口吻，面向一个不太懂理财的普通劳动者，"
         "用大白话帮我分析处境、给可执行的建议。我的情况如下：\n\n"
@@ -1779,6 +1828,7 @@ def build_current_situation_prompt(age, tier, wage, ins, housing, food,
         f"- 住房：{housing}　饮食档次：{food}\n"
         f"- {car_cn}\n"
         f"- 家庭：{kids_cn}，{elder_cn}\n"
+        f"{extra_lines}"
         f"- 目前存款：{savings_cn}\n"
         f"{city_line}\n\n"
         "【请帮我分析】\n"
@@ -1796,8 +1846,9 @@ def build_current_situation_prompt(age, tier, wage, ins, housing, food,
     )
 
 
-def build_milestones_prompt(tier, wage, city=""):
-    """人生三座山（结婚/养娃/养老）→ 问 AI 的提示词。"""
+def build_milestones_prompt(tier, wage, city="", profile=None):
+    """人生三座山（结婚/养娃/养老）→ 问 AI 的提示词。
+    年龄/家庭/存款等从 profile 的事实段带入。"""
     city_line = (f"- 所在城市：{city}（等级 {tier}）" if city
                  else f"- 所在城市等级：{tier}")
     return (
@@ -1806,6 +1857,7 @@ def build_milestones_prompt(tier, wage, city=""):
         "【我的情况】\n"
         f"- 月薪：{wage:,.0f} 元\n"
         f"{city_line}\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 先问清楚我最关心哪座山（结婚 / 养娃 / 养老）以及细节——比如结婚的话"
         "有没有彩礼/婚房压力；养娃的话孩子多大、想走公办还是民办；养老的话打算几岁退、"
@@ -1818,17 +1870,21 @@ def build_milestones_prompt(tier, wage, city=""):
     )
 
 
-def build_compare_prompt(tier_a, tier_b, wage, target_city=""):
+def build_compare_prompt(tier_a, tier_b, wage, target_city="", housing="合租单间",
+                        food="普通", has_car=False, insurance="在职（单位缴）"):
     """城市加减法 → 问 AI 的提示词。target_city 为用户补充的目标具体城市名。"""
     b_line = (f"- 想去的目标城市：{target_city}（等级 {tier_b}）" if target_city
               else f"- 想去的目标城市：等级 {tier_b}（具体城市名我稍后补充，请先问我）")
+    life_line = (f"- 住房方式：{housing}　饮食档次：{food}　"
+                 f"{'有车' if has_car else '无车'}　社保：{insurance}")
     return (
         "请以资深职业与生活规划师的口吻，面向普通劳动者，用大白话帮我判断「换个城市值不值」。"
         "我的情况如下：\n\n"
         "【我的情况】\n"
         f"- 月薪：{wage:,.0f} 元\n"
         f"- 现在城市：等级 {tier_a}（具体城市名请先问我）\n"
-        f"{b_line}\n\n"
+        f"{b_line}\n"
+        f"{life_line}\n\n"
         "【请帮我】\n"
         "1. 先问清楚我两边的具体城市名，然后对比这两座城市：生活成本（房租、吃饭、交通）、"
         "工资水平、就业机会、买房 / 落户难度。\n"
@@ -1840,7 +1896,7 @@ def build_compare_prompt(tier_a, tier_b, wage, target_city=""):
     )
 
 
-def build_injury_prompt(city, grade, monthly_wage):
+def build_injury_prompt(city, grade, monthly_wage, profile=None):
     """工伤赔偿 → 问 AI 的提示词（让 AI 确认赔偿项目 + 讲认定/鉴定流程）。"""
     return (
         "请以资深工伤与劳动法律师的口吻，用大白话帮我。我在工作中受了伤，"
@@ -1849,6 +1905,7 @@ def build_injury_prompt(city, grade, monthly_wage):
         f"- 所在城市：{city}\n"
         f"- 伤残等级（劳动能力鉴定）：{grade} 级（若还没鉴定，请先问我伤情帮我预估级别）\n"
         f"- 受伤前 12 个月平均月工资：{monthly_wage:,.0f} 元\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 按国家《工伤保险条例》，我这个等级能拿到哪些赔偿？"
         "（一次性伤残补助金、伤残津贴、一次性工伤医疗/就业补助金等）逐项算给我看。\n"
@@ -1868,6 +1925,64 @@ def build_injury_prompt(city, grade, monthly_wage):
 # 住房决策（买 vs 租 / 公积金额度 / 利率压力测试）
 # 注意：房价/利率波动大，结果均为估算，务必结合「问 AI」查最新行情
 # ============================================================
+
+def _money(x):
+    """金额简写：≥1万显示 'X.X 万'，否则 'X,XXX 元'。供结果区富文本段落用。"""
+    return f"{x/10000:.1f} 万" if abs(x) >= 10000 else f"{x:,.0f} 元"
+
+
+def _profile_brief(profile):
+    """从档案 dict 提取客观个人情况（年龄/健康/社保/家庭/存款/负债），拼一段供提示词用。
+
+    只放用户自填的**事实**（确认性信息），不含任何工具估算——提示词是给 AI 的，
+    工具算的数字本身就不准，塞进去反而误导 AI。profile 为空/None 或无可填项时返回空串。
+    """
+    if not profile:
+        return ""
+    p = profile
+    bits = []
+    age = p.get("age")
+    gender = p.get("gender")
+    if age:
+        line = f"年龄 {age} 岁"
+        if gender:
+            line += f"（{gender}）"
+        health = p.get("health")
+        if health and "健康" not in str(health):
+            line += f"，{health}"
+        bits.append(line)
+    elif gender:
+        bits.append(f"性别：{gender}")
+    ins = p.get("insurance")
+    if ins:
+        bits.append(f"社保：{ins}")
+    fam = []
+    if p.get("has_partner"):
+        pw = p.get("partner_wage")
+        fam.append("有伴侣" + (f"（月薪约 {pw}）" if pw not in (None, "", 0) else ""))
+    nc = p.get("num_children")
+    if nc:
+        fam.append(f"{nc} 个孩子")
+    if p.get("support_elderly"):
+        fam.append("需赡养老人")
+    if fam:
+        bits.append("家庭：" + "、".join(fam))
+    sav = p.get("savings")
+    if sav not in (None, "", 0):
+        bits.append(f"现有存款约 {sav} 元")
+    debts = []
+    m = p.get("mortgage_monthly")
+    if m not in (None, "", 0):
+        debts.append(f"房贷 {m}/月")
+    cl = p.get("car_loan_monthly")
+    if cl not in (None, "", 0):
+        debts.append(f"车贷 {cl}/月")
+    if debts:
+        bits.append("现有月供负债：" + "、".join(debts))
+    if not bits:
+        return ""
+    return "【我的其他情况（个人档案）】\n- " + "；".join(bits) + "\n\n"
+
 
 def compare_buy_rent(tier, years=10, house_area=90, down_ratio=0.3,
                      commercial_rate=None, fund_rate=None, rent_monthly=None,
@@ -1921,12 +2036,31 @@ def compare_buy_rent(tier, years=10, house_area=90, down_ratio=0.3,
     note += ("\n\n⚠️ 关键提醒：这是「房价不涨不跌」的中性估算。当前多数城市房价在跌"
              "（除一线城市核心），若你买的房子跌了，买房还要额外亏掉跌幅——"
              "跌幅可能远超利息。务必用「问 AI」查你关注小区的真实行情再决定。")
+    # 富文本段落（结果区 RichNote 渲染，层次比纯 note 文本清晰）
+    if diff < 0:
+        concl = {"t": f"房价不跌时 买房省 {_money(abs(diff))}\n", "tag": "big"}
+    else:
+        concl = {"t": f"房价不跌时 租房省 {_money(abs(diff))}\n", "tag": "bigbad"}
+    rich = [
+        {"t": f"买房成本（买 vs 租 · {years} 年）\n", "tag": "h"},
+        {"t": f"总价 {_money(house_price)} · 首付 {_money(downpay)} · 贷款 {_money(loan)}\n", "tag": "normal"},
+        {"t": f"月供 {_money(monthly)}/月\n", "tag": "buy"},
+        {"t": f"住 {years} 年还利息 ≈ {_money(interest_paid)}  ← 买房真代价\n", "tag": "buy"},
+        {"t": "\n租房成本\n", "tag": "h"},
+        {"t": f"月租 {_money(rent_monthly)}/月\n", "tag": "rent"},
+        {"t": f"{years} 年租金 ≈ {_money(rent_total)}\n", "tag": "rent"},
+        {"t": "\n", "tag": "normal"},
+        concl,
+        {"t": "（房价若跌，买房还要额外亏掉跌幅）\n", "tag": "muted"},
+        {"t": "\n⚠ 当前房价波动剧烈，以上为粗算估算（未含税费/维修/空置），"
+         "点「问 AI」结合最新行情再判断。", "tag": "warn"},
+    ]
     return {
         "tier": tier, "years": years, "house_price": house_price, "downpay": downpay,
         "loan": loan, "monthly": monthly, "buy_total_paid": total_paid,
         "interest_paid": interest_paid, "remaining": remaining, "residual": house_price,
         "buy_net": buy_net, "rent_monthly": rent_monthly, "rent_total": rent_total,
-        "rent_net": rent_net, "diff": diff, "note": note,
+        "rent_net": rent_net, "diff": diff, "note": note, "rich": rich,
     }
 
 
@@ -1953,11 +2087,19 @@ def housing_fund_loan(tier, balance=0, monthly_contribution=0, years=30):
     )
     note += ("\n⚠️ 各地公积金政策差异大（上限/倍数/缴存要求不同），以上是估算。"
              "用「问 AI」查你所在城市的最新公积金贷款政策更准。")
+    rich = [
+        {"t": "公积金可贷额度\n", "tag": "h"},
+        {"t": f"可贷约 {_money(eligible)}\n", "tag": "big"},
+        {"t": f"按首套利率 {rate*100:.2f}%、{years} 年等额本息\n", "tag": "normal"},
+        {"t": f"月供约 {_money(monthly)}/月 · 总利息约 {_money(total_interest)}\n", "tag": "buy"},
+        {"t": "\n⚠ 各地公积金政策差异大（上限/倍数/缴存要求不同），以上为估算，"
+         "点「问 AI」查当地最新政策更准。", "tag": "warn"},
+    ]
     return {
         "tier": tier, "eligible": eligible, "rate": rate, "years": years,
         "monthly": monthly, "total_interest": total_interest,
         "max_by_tier": max_by_tier, "by_balance": by_balance,
-        "by_contribution": by_contribution, "note": note,
+        "by_contribution": by_contribution, "note": note, "rich": rich,
     }
 
 
@@ -1979,31 +2121,48 @@ def rate_stress_test(principal, base_rate=0.0345, years=30):
         f"{years} 年多付利息 {rows[2]['total_interest']-rows[0]['total_interest']:,.0f} 元。"
     )
     note += "\n⚠️ 实际利率以你签贷款时的 LPR + 加点为准，会随央行调整变动。"
+    rich = [
+        {"t": f"利率压力测试（贷 {_money(principal)} / {years} 年）\n", "tag": "h"},
+        {"t": f"· 利率 {base_rate*100:.2f}%：月供 {_money(rows[0]['monthly'])}\n", "tag": "normal"},
+        {"t": f"· 利率 {(base_rate+0.005)*100:.2f}%（+0.5%）：月供 {_money(rows[1]['monthly'])}\n", "tag": "normal"},
+        {"t": f"· 利率 {(base_rate+0.01)*100:.2f}%（+1%）：月供 {_money(rows[2]['monthly'])}\n", "tag": "buy"},
+        {"t": "\n", "tag": "normal"},
+        {"t": f"利率每涨 1%，月供多约 {_money(rows[2]['monthly']-base_m)}，"
+         f"{years} 年多付利息 {_money(rows[2]['total_interest']-rows[0]['total_interest'])}\n", "tag": "bigbad"},
+        {"t": "\n⚠ 实际利率以签贷款时的 LPR + 加点为准，会随央行调整变动。", "tag": "warn"},
+    ]
     return {"principal": principal, "base_rate": base_rate, "years": years,
-            "rows": rows, "note": note}
+            "rows": rows, "note": note, "rich": rich}
 
 
-def build_buy_rent_prompt(tier, years, city=""):
+def build_buy_rent_prompt(tier, years, area=90, down_ratio=0.3, city="", profile=None):
     city_line = (f"- 关注的城市：{city}（等级 {tier}）" if city
                  else f"- 城市等级：{tier}（请结合该等级典型城市，或先问我具体城市）")
     return (
         "请以资深房产分析师的口吻，用大白话帮我判断「买房还是租房」。我的情况：\n\n"
-        f"{city_line}\n- 打算对比的年限：{years} 年\n\n"
+        "【我的情况】\n"
+        f"{city_line}\n"
+        f"- 对比年限：{years} 年　房产面积：{area}㎡　首付比例：{down_ratio*100:.0f}%\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 结合当地最新的房价、租金、房贷利率，算一算这几年买房 vs 租房大致花多少、哪个更划算。\n"
         "2. 现在的楼市行情，是买房的好时机吗？房价在涨还是跌？给出判断依据。\n"
-        "3. 如果买房，首付、月供、税费、维修大概多少？我这种收入能承受吗？\n"
+        "3. 如果买房，首付、月供、税费、维修大概多少？我这种收入和存款能承受吗？\n"
         "4. 如果租房，有什么该注意的（租售比、租金走势、长租稳定性）？\n"
         "5. 综合看，你建议我买还是租？给明确倾向和理由，别和稀泥。\n\n"
         "要求：结合当地真实行情和最新政策。我知道楼市波动大，给判断时请说明依据和不确定性。"
     )
 
 
-def build_fund_prompt(tier, balance, city=""):
+def build_fund_prompt(tier, balance, contrib=0, years=30, city="", profile=None):
     city_line = f"- 所在城市：{city}（等级 {tier}）" if city else f"- 城市等级：{tier}"
+    contrib_line = f"- 月缴存：{contrib} 元　" if contrib not in (None, "", 0) else ""
     return (
         "请以熟悉各地公积金政策的顾问口吻，用大白话帮我算公积金贷款。我的情况：\n\n"
-        f"{city_line}\n- 公积金账户余额约：{balance:,.0f} 元\n\n"
+        "【我的情况】\n"
+        f"{city_line}\n- 公积金账户余额约：{balance:,.0f} 元\n"
+        f"{contrib_line}贷款年限：{years} 年\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 按我所在城市的公积金政策，我最多能贷多少？（当地最高额度、余额倍数、缴存要求都查一下）\n"
         "2. 首套/二套利率分别是多少？按我的额度算月供和总利息。\n"
@@ -2014,10 +2173,15 @@ def build_fund_prompt(tier, balance, city=""):
     )
 
 
-def build_rate_stress_prompt(principal, base_rate, city=""):
+def build_rate_stress_prompt(principal, base_rate, years=30, city="", profile=None):
+    city_line = f"- 所在城市：{city}\n" if city else ""
     return (
         "请以资深房贷顾问的口吻，用大白话帮我做利率压力测试。我的情况：\n\n"
-        f"- 计划贷款：{principal:,.0f} 元\n- 当前参考利率：{base_rate*100:.2f}%\n\n"
+        "【我的情况】\n"
+        f"- 计划贷款：{principal:,.0f} 元\n"
+        f"- 当前参考利率：{base_rate*100:.2f}%　贷款年限：{years} 年\n"
+        f"{city_line}\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 当前 LPR 和首套/二套房贷利率是多少？我这种能拿到什么利率？\n"
         "2. 利率再涨 0.5% 或 1%（或降），月供和总利息会变多少？\n"
@@ -2104,11 +2268,32 @@ def special_deduction_hints(has_children=0, support_elderly=False,
     return hints
 
 
-def build_tax_prompt(annual_salary, bonus, city=""):
-    city_line = f"- 所在城市：{city}" if city else ""
+def build_tax_prompt(annual_salary, bonus, city="", special=0, social=0,
+                     kids=0, elderly=False, loan=False, edu=False, profile=None):
+    """个税优化 → 问 AI 的提示词。special/social 为月专项扣除/月社保；
+    kids/elderly/loan/edu 为家庭情况（决定专项附加扣除）。"""
+    city_line = f"- 所在城市：{city}\n" if city else ""
+    family_bits = []
+    if kids:
+        family_bits.append(f"子女 {kids} 个")
+    if elderly:
+        family_bits.append("需赡养老人")
+    if loan:
+        family_bits.append("有首套房贷")
+    if edu:
+        family_bits.append("本人继续教育")
+    family_line = ("- 家庭扣除情况：" + "、".join(family_bits) + "\n") if family_bits else ""
+    dedu_line = ((f"- 月专项附加扣除合计：{special:,.0f} 元　月社保个人部分：{social:,.0f} 元\n")
+                 if (special or social) else "")
     return (
         "请以熟悉个税政策的税务顾问口吻，用大白话帮我做税务优化。我的情况：\n\n"
-        f"- 年税前工资约 {annual_salary:,.0f} 元\n- 年终奖约 {bonus:,.0f} 元\n{city_line}\n\n"
+        "【我的情况】\n"
+        f"- 年税前工资约 {annual_salary:,.0f} 元\n"
+        f"- 年终奖约 {bonus:,.0f} 元\n"
+        f"{dedu_line}"
+        f"{family_line}"
+        f"{city_line}\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 我的年终奖该单独计税还是并入综合所得？分别算给我看，哪个省、省多少。\n"
         "2. 我能享受哪些专项附加扣除？每项能扣多少、我符不符合、怎么在个税 APP 申报？\n"
@@ -2173,11 +2358,16 @@ def check_relief(city, per_capita_income, family_size=1, asset=None):
             "note": note, "estimated": db_est}
 
 
-def build_assistance_prompt(city, per_capita_income, family_info=""):
+def build_assistance_prompt(city, per_capita_income, family_info="", asset=None, profile=None):
+    """本地救助 → 问 AI 的提示词。asset 为家庭人均金融资产（财产限制判断用）。"""
+    asset_line = f"- 家庭人均金融资产：{asset:,.0f} 元\n" if asset else ""
     return (
         "请以民政/社会救助专家的口吻，用大白话帮我判断能申请什么救助。我的情况：\n\n"
+        "【我的情况】\n"
         f"- 所在城市：{city}\n- 家庭人均月收入约：{per_capita_income:,.0f} 元\n"
+        f"{asset_line}"
         f"- 家庭情况：{family_info or '（请先问我家庭人数、是否有老小病残、现有保障）'}\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 按我所在城市的最新标准，我符合低保 / 低保边缘 / 特困哪一档？能领多少？\n"
         "2. 怎么申请？去哪里（街道/乡镇民政）、带什么材料、流程几步、多久能批？\n"
@@ -2198,11 +2388,16 @@ def estimate_medical_cost(city, identity="职工", cost=50000, remote="none", re
     return M.estimate_inpatient(city, identity, cost, remote, retired)
 
 
-def build_medical_prompt(city, identity, cost, retired=False):
+def build_medical_prompt(city, identity, cost, retired=False, remote="none", profile=None):
+    """医保报销 → 问 AI 的提示词。remote 为就医方式键（none/filed/unfiled）。"""
+    _DISP = {"none": "本地就医", "filed": "异地已备案", "unfiled": "异地未备案"}
     return (
         "请以医保政策专家的口吻，用大白话帮我算医保报销。我的情况：\n\n"
+        "【我的情况】\n"
         f"- 参保城市：{city}\n- 医保类型：{identity}{'（退休）' if retired else ''}\n"
+        f"- 就医方式：{_DISP.get(remote, '本地就医')}\n"
         f"- 预估住院费用：{cost:,.0f} 元（三级医院）\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 基本医保 + 大病保险，我大概能报多少、自付多少？按当地最新政策算给我看。\n"
         "2. 我要不要先办异地备案/转诊？怎么办（线上步骤）？不办会少报多少？\n"
@@ -2266,11 +2461,12 @@ def assess_debt_health(total_debt, monthly_income, monthly_pay, avg_apr=0.18):
             "level": level, "color": color, "note": "\n".join(parts)}
 
 
-def build_debt_health_prompt(total_debt, monthly_income, monthly_pay, avg_apr):
+def build_debt_health_prompt(total_debt, monthly_income, monthly_pay, avg_apr, profile=None):
     return (
         "请以资深债务顾问的口吻，用大白话帮我评估债务健康、给摆脱债务的建议。我的情况：\n\n"
         f"- 总负债约：{total_debt:,.0f} 元\n- 月收入：{monthly_income:,.0f} 元\n"
         f"- 每月能还：{monthly_pay:,.0f} 元\n- 平均年化约：{avg_apr*100:.0f}%\n\n"
+        + _profile_brief(profile) +
         "【请帮我】\n"
         "1. 我的负债健康吗？负债率/月供比算给我看，给明确评级。\n"
         "2. 按现在还款节奏，多久能还清？总利息多少？有没有更省的还法？\n"

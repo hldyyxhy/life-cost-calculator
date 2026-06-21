@@ -30,7 +30,9 @@ import cost_data as D
 # combo 的 options 放在说明字段（list）
 FIELD_DEFS = {
     "basic": [
+        ("name", "", "姓名（可选）", "entry", "用于区分多份长期跟踪档案"),
         ("age", 30, "年龄", "spin", (16, 80)),
+        ("gender", "男", "性别", "combo", ["男", "女"]),
         ("city", "", "所在城市", "entry", "如：北京、成都、长沙…输入后自动匹配城市等级"),
         ("tier", "三线", "城市等级", "combo", ["一线", "新一线", "二线", "三线", "四线", "五线"]),
         ("health", "健康（无慢性病）", "健康状况", "combo",
@@ -90,7 +92,7 @@ GROUP_TITLES = {
 # 否则按已答字典 a 决定该字段是否出现——实现"没伴侣就不问伴侣薪资"式的智能跳过）
 WIZARD_STEPS = [
     {"title": "先认识一下", "fields": [
-        {"key": "age"}, {"key": "city"},
+        {"key": "name"}, {"key": "age"}, {"key": "gender"}, {"key": "city"},
     ]},
     {"title": "你的收入", "fields": [
         {"key": "wage"}, {"key": "insurance"}, {"key": "has_side_income"},

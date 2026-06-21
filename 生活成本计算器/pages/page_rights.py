@@ -24,6 +24,7 @@ class RightsPage(ttk.Frame):
         self.app = app
         self._profile_city = ""  # 从档案同步的城市名
         self._profile_tier = ""  # 从档案同步的城市等级
+        self._profile = {}       # 缓存整个档案，供「问 AI」提示词补 age/gender/wage 等
         self._nb = ttk.Notebook(self)
         self._nb.pack(fill="both", expand=True, padx=8, pady=8)
 
@@ -48,6 +49,7 @@ class RightsPage(ttk.Frame):
     # ---------- 档案载入（从档案页「确定」同步接收）----------
     def apply_profile(self, prof):
         """把档案中的城市信息同步到各tab的城市输入框。"""
+        self._profile = prof
         self._profile_city = prof.get("city", "")
         self._profile_tier = prof.get("tier", "")
         # 填充各tab的城市组合框
@@ -73,10 +75,7 @@ class RightsPage(ttk.Frame):
         return W.readonly_note(parent, height=height, grid=grid)
 
     def _set_note(self, tw, text):
-        tw.config(state="normal")
-        tw.delete("1.0", "end")
-        tw.insert("1.0", text)
-        tw.config(state="disabled")
+        tw.set_smart_text(text)
 
     # ============================================================
     # 加班费依法反算
@@ -441,7 +440,7 @@ class RightsPage(ttk.Frame):
             except ValueError:
                 grade, wage = 7, 6000
             use_city = city or self.var_inj_city.get().strip()
-            return E.build_injury_prompt(use_city, grade, wage)
+            return E.build_injury_prompt(use_city, grade, wage, profile=self._profile)
         W.open_prompt_dialog(
             self, "问 AI 的提示词（工伤赔偿）", with_city=True,
             build_fn=build, initial_city=self._profile_city,
@@ -452,13 +451,16 @@ class RightsPage(ttk.Frame):
             self, "问 AI 的提示词（最低工资对照）", with_city=True,
             initial_city=self._profile_city,
             build_fn=lambda city: E.build_min_wage_prompt(
-                float(self.var_mw_wage.get()), self.var_mw_tier.get(), city))
+                float(self.var_mw_wage.get()), self.var_mw_tier.get(), city,
+                profile=self._profile))
 
     def _open_unemployment_prompt(self):
         W.open_prompt_dialog(
             self, "问 AI 的提示词（失业金）", with_city=True,
             initial_city=self._profile_city,
-            build_fn=lambda city: E.build_unemployment_prompt(city),
+            build_fn=lambda city: E.build_unemployment_prompt(
+                city, years=self.var_un_years.get(),
+                wage=self._profile.get("wage", ""), profile=self._profile),
             intro="把下面这段复制到任意 AI，它会先问你必要的信息（缴费年限、工资、离职原因等），"
                   "再结合你所在城市查最新规定，告诉你能领多少、怎么领。")
 
@@ -466,7 +468,8 @@ class RightsPage(ttk.Frame):
         W.open_prompt_dialog(
             self, "问 AI 的提示词（灵活就业社保补贴 / 4050）", with_city=True,
             initial_city=self._profile_city,
-            build_fn=lambda city: E.build_subsidy_prompt(city),
+            build_fn=lambda city: E.build_subsidy_prompt(
+                city, profile=self._profile),
             intro="把下面这段复制到任意 AI，它会先问你必要的信息（年龄、是否自缴社保等），"
                   "再结合你所在城市查最新规定，告诉你能不能领、领多少、怎么申请。")
 
@@ -541,9 +544,16 @@ class RightsPage(ttk.Frame):
     def _open_tax_prompt(self):
         wage = float(self.var_tax_wage.get() or 0)
         bonus = float(self.var_tax_bonus.get() or 0)
+        special = float(self.var_tax_special.get() or 0)
+        social = float(self.var_tax_social.get() or 0)
         W.open_prompt_dialog(
             self, "问 AI（个税优化）", with_city=True,
-            build_fn=lambda city: E.build_tax_prompt(wage * 12, bonus, city),
+            build_fn=lambda city: E.build_tax_prompt(
+                wage * 12, bonus, city, special=special, social=social,
+                kids=int(self.var_tax_kids.get()),
+                elderly=self.var_tax_elderly.get(),
+                loan=self.var_tax_loan.get(),
+                edu=self.var_tax_edu.get(), profile=self._profile),
             initial_city=self._profile_city,
             intro="把这段复制给 AI，它会算年终奖单独vs合并、专项扣除、全年税额，给在个税APP操作的建议。")
 
@@ -612,11 +622,14 @@ class RightsPage(ttk.Frame):
             income = float(self.var_assist_income.get() or 0)
         except ValueError:
             income = 0
+        asset_s = self.var_assist_asset.get().strip()
+        asset = float(asset_s) if asset_s else None
         W.open_prompt_dialog(
             self, "问 AI（本地救助）",
             build_fn=lambda c: E.build_assistance_prompt(
                 city or self._profile_city or "（请填城市）", income,
-                f"{int(self.var_assist_size.get() or 1)} 人家庭"),
+                f"{int(self.var_assist_size.get() or 1)} 人家庭", asset=asset,
+                profile=self._profile),
             intro="把这段复制给 AI，填你的城市，它会判断你符合哪档、能领多少、怎么申请。")
 
     # ============================================================

@@ -12,9 +12,10 @@ gui_app.py —— 主窗口：左侧导航 + 右侧内容区 + 页面切换
 """
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 import gui_widgets as W
+import tracking as TR
 import profile as P
 from pages.page_profile import ProfilePage
 from pages.page_current import CurrentSituationPage
@@ -25,6 +26,7 @@ from pages.page_debt import DebtPage
 from pages.page_rights import RightsPage
 from pages.page_assist import AssistPage
 from pages.page_medical import MedicalPage
+from pages.page_tracking import TrackingPage
 from pages.page_wizard import open_profile_wizard
 
 
@@ -72,7 +74,8 @@ class App:
             ("⑥ 劳动权益\n（加班费/失业金/工伤等）", "rights"),
             ("⑦ 求助与反诈\n（出事找谁/防骗）", "assist"),
             ("⑧ 医保就医\n（住院报销/慢病）", "medical"),
-            ("⑨ 关于与数据说明", "about"),
+            ("⑨ 长期跟踪\n（趋势变化）", "tracking"),
+            ("⑩ 关于与数据说明", "about"),
         ]
         for text, key in page_specs:
             btn = ttk.Button(c, text=text, style="Nav.TButton",
@@ -101,6 +104,7 @@ class App:
         self.pages["rights"] = RightsPage(self.content)
         self.pages["assist"] = AssistPage(self.content)
         self.pages["medical"] = MedicalPage(self.content, app=self)
+        self.pages["tracking"] = TrackingPage(self.content, app=self)
         for p in self.pages.values():
             p.grid(row=0, column=0, sticky="nsew")
 
@@ -138,17 +142,68 @@ class App:
             debt.load_state()
 
     def _on_close(self, root):
-        """关闭窗口前兜底保存档案 + 债务页输入，再销毁窗口。"""
+        """关闭窗口前兜底保存档案 + 债务页输入，弹窗问是否存跟踪快照，再销毁。"""
+        prof = None
         try:
             pg = self.pages.get("profile")
             if pg is not None:
-                P.save_last_profile(pg.collect())
+                prof = pg.collect()
+                P.save_last_profile(prof)
             debt = self.pages.get("debt")
             if debt is not None and hasattr(debt, "save_state"):
                 debt.save_state()
         except Exception:
             pass
+        self._ask_save_snapshot(prof)   # 模态弹窗，操作完才继续
         root.destroy()
+
+    def _ask_save_snapshot(self, prof):
+        """模态弹窗：是否把本次存为长期跟踪快照（可填姓名，同名累积）。"""
+        win = tk.Toplevel(self.root)
+        win.title("保存跟踪快照？")
+        w, h = 440, 240
+        sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
+        win.geometry(f"{w}x{h}+{(sw-w)//2}+{(sh-h)//2}")
+        win.transient(self.root)
+        win.grab_set()
+
+        top = ttk.Frame(win, padding=12)
+        top.pack(fill="x")
+        ttk.Label(top, text="是否把本次情况存为长期跟踪快照？",
+                  font=W.FONT_BOLD).pack(anchor="w")
+        ttk.Label(top, text="存了能在「⑨ 长期跟踪」页看结余、存款等的变化趋势。",
+                  style="Sub.TLabel", wraplength=400, justify="left").pack(anchor="w", pady=(4, 8))
+
+        row = ttk.Frame(win, padding=12)
+        row.pack(fill="x")
+        ttk.Label(row, text="档案姓名：").pack(side="left")
+        var_name = tk.StringVar(value=(prof or {}).get("name", ""))
+        ttk.Entry(row, textvariable=var_name, width=18).pack(side="left", padx=6)
+        ttk.Label(row, text="（同名会累积到同一档案）", style="Sub.TLabel").pack(side="left")
+
+        bot = ttk.Frame(win, padding=12)
+        bot.pack(fill="x", side="bottom")
+
+        def do_save():
+            name = var_name.get().strip()
+            if prof is not None:
+                try:
+                    last = getattr(self.pages.get("current"), "_last_result", None)
+                    TR.save_snapshot(name, prof, TR.metrics_from(prof, last))
+                    messagebox.showinfo(
+                        "已保存",
+                        "跟踪快照已存到 data/tracking/ 目录。\n下次在「⑨ 长期跟踪」页查看。",
+                        parent=win)
+                except Exception as e:
+                    messagebox.showwarning("保存失败", str(e), parent=win)
+            win.destroy()
+
+        ttk.Button(bot, text="保存并关闭", style="AskAI.TButton",
+                   command=do_save).pack(side="left")
+        ttk.Button(bot, text="直接关闭（不存）",
+                   command=win.destroy).pack(side="left", padx=6)
+
+        self.root.wait_window(win)
 
     # ---------- 首次填写向导 ----------
     def _maybe_show_wizard(self):

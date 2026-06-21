@@ -18,6 +18,7 @@ class MilestonesPage(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
         self._profile_city = ""  # 从档案同步的城市名，用于提示词
+        self._profile = {}       # 缓存档案，供「问 AI」提示词补年龄/家庭/存款/负债
         self._computed = {"marriage": False, "child": False, "retire": False}
         self._scroll = W.ScrollableFrame(self)
         self._scroll.pack(fill="both", expand=True)
@@ -46,6 +47,7 @@ class MilestonesPage(ttk.Frame):
 
     def apply_profile(self, prof):
         """从档案同步：城市 + 月薪（三座山共享字段）。"""
+        self._profile = prof
         self._profile_city = prof.get("city", "")
         if prof.get("tier"):
             self.var_tier.set(prof["tier"])
@@ -353,6 +355,6 @@ class MilestonesPage(ttk.Frame):
             self, "问 AI 的提示词（人生三座山）", with_city=True,
             initial_city=self._profile_city,
             build_fn=lambda city: E.build_milestones_prompt(
-                self.var_tier.get(), self._wage(), city),
+                self.var_tier.get(), self._wage(), city, profile=self._profile),
             intro="把下面这段复制到任意 AI，它会先问你最关心哪座山（结婚/养娃/养老）"
                   "和细节，再结合你的城市估算要花多少钱、该怎么准备。")

@@ -14,6 +14,7 @@ gui_widgets.py —— 可复用 GUI 组件与统一样式
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
+import re
 import webbrowser
 
 
@@ -218,22 +219,133 @@ def open_prompt_dialog(parent, title, build_fn, with_city=False, intro="",
 
 
 def readonly_note(parent, height=6, grid=None, bg="#f7f9fc"):
-    """带垂直滚动条的只读解读框（frame 内 Text + Scrollbar，返回 Text）。
+    """带垂直滚动条的只读解读框（现为富文本 RichNote，支持 set_smart_text 智能着色）。
     各页复用，消除 _make_note 重复。grid 为 dict 时用 grid，否则 pack(fill="x")。"""
-    frame = ttk.Frame(parent)
-    if grid:
-        frame.grid(**grid)
-    else:
-        frame.pack(fill="x")
-    frame.columnconfigure(0, weight=1)
-    tw = tk.Text(frame, height=height, wrap="word", relief="flat",
-                 bg=bg, font=(FONT_FAMILY, 11), padx=8, pady=6)
-    tw.grid(row=0, column=0, sticky="nsew")
-    sb = ttk.Scrollbar(frame, orient="vertical", command=tw.yview)
-    tw.configure(yscrollcommand=sb.set)
-    sb.grid(row=0, column=1, sticky="ns")
-    tw.config(state="disabled")
-    return tw
+    return RichNote(parent, height=height, bg=bg, grid=grid)
+
+
+class RichNote(ttk.Frame):
+    """带语义样式的只读结果框（Text + 滚动条），渲染富文本段落。
+
+    住房等页用它替代纯文本 readonly_note：把"月供 / 利息 / 租金 / 差额 / 警示"
+    等关键数字用颜色、字号、加粗区分层次（买橙 / 租蓝 / 结论大号绿红 / 警示红小字），
+    而不是整段同字体同颜色。
+
+    用法：
+        rn = RichNote(parent, height=12); rn.pack(...)
+        rn.set_rich([{"t": "买房成本\\n", "tag": "h"},
+                     {"t": "月供 3,969\\n", "tag": "buy"}, ...])
+        rn.set_text("纯文本回落")   # 输入错误等用普通文本
+    """
+
+    # tag → (字体, 前景色)；复用全局语义色常量，保持与 BigNumberLabel 等一致
+    _STYLES = {
+        "h":      dict(font=(FONT_FAMILY, 12, "bold"), foreground=COLOR_ACCENT),   # 块小标题 蓝
+        "buy":    dict(font=(FONT_FAMILY, 12, "bold"), foreground="#d97706"),      # 买房块关键金额 橙
+        "rent":   dict(font=(FONT_FAMILY, 12, "bold"), foreground="#2563eb"),      # 租房块关键金额 蓝
+        "big":    dict(font=(FONT_FAMILY, 16, "bold"), foreground=COLOR_SURPLUS),  # 结论-利好 大号绿
+        "bigbad": dict(font=(FONT_FAMILY, 16, "bold"), foreground=COLOR_DEFICIT),  # 结论-不利 大号红
+        "warn":   dict(font=(FONT_FAMILY, 10), foreground=COLOR_DEFICIT),          # 警示 红小字
+        "emph":   dict(font=(FONT_FAMILY, 13, "bold"), foreground="#222222"),     # 中性强调（结论行）
+        "muted":  dict(font=(FONT_FAMILY, 10), foreground="#888888"),             # 次要说明 灰小字
+        "num":    dict(font=(FONT_FAMILY, 11, "bold"), foreground="#1a1a1a"),     # 行内数字加粗
+        "bad":    dict(font=(FONT_FAMILY, 11, "bold"), foreground=COLOR_DEFICIT), # 行内负面评级词（红）
+        "normal": dict(font=FONT, foreground="#222222"),                          # 正文
+    }
+
+    def __init__(self, parent, height=12, bg="#f0f7f0", grid=None):
+        super().__init__(parent)
+        if grid:
+            self.grid(**grid)
+        else:
+            self.pack(fill="x")
+        self.columnconfigure(0, weight=1)
+        self.text = tk.Text(self, height=height, wrap="word", relief="flat",
+                            bg=bg, font=FONT, padx=8, pady=6)
+        self.text.grid(row=0, column=0, sticky="nsew")
+        for tag, cfg in self._STYLES.items():
+            self.text.tag_configure(tag, **cfg)
+        sb = ttk.Scrollbar(self, orient="vertical", command=self.text.yview)
+        self.text.configure(yscrollcommand=sb.set)
+        sb.grid(row=0, column=1, sticky="ns")
+        self.text.config(state="disabled")
+
+    def _fill(self, put):
+        self.text.config(state="normal")
+        self.text.delete("1.0", "end")
+        put()
+        self.text.config(state="disabled")
+
+    def set_rich(self, segments):
+        """segments: [{"t": 文本, "tag": 语义}, ...]；未知 tag 回落 normal。"""
+        def _put():
+            for seg in segments:
+                t = seg.get("t", "")
+                tag = seg.get("tag", "normal")
+                if tag not in self._STYLES:
+                    tag = "normal"
+                self.text.insert("end", t, tag)
+        self._fill(_put)
+
+    def set_text(self, plain):
+        """纯字符串按 normal 渲染（错误提示等回落，兼容旧 _set_note 用法）。"""
+        self._fill(lambda: self.text.insert("1.0", plain))
+
+    # 智能着色用的关键词（决定结论行/正文行内如何着色）
+    _POS_KEYS = ("省", "更划算", "更优", "更省", "健康", "合法", "增加", "更低",
+                 "✅", "推荐", "值得", "符合")
+    _NEG_KEYS = ("亏", "违法", "危险", "高利贷", "失控", "减少", "⚠", "更高",
+                 "偏高", "不建议", "盖不住", "越还越多", "不符合")
+    # 正文行内的负面评级词（标红，让"偏高/违法/失控"这类重点跳出来）
+    _NEG_WORDS = ("偏高", "高利贷", "极高", "违法", "危险", "失控", "吃紧",
+                  "盖不住", "越还越多", "不符合", "警戒", "不建议", "红线", "超额", "偏贵")
+    # 匹配"数字"或"负面评级词"，用于正文行内细分着色
+    _TOKEN_RE = re.compile(r"\d[\d,]*\.?\d*|" + "|".join(re.escape(w) for w in _NEG_WORDS))
+
+    def set_smart_text(self, plain):
+        """纯文本智能着色，不改变文字内容：
+        - 【开头 → 小节标题（蓝加粗）
+        - →/✅/✓/▶ 开头 → 结论行（大号：正绿/负红/中性深）
+        - ⚠ 开头 → 警示（红小字）
+        - 其余正文行：行内【数字加粗】、【负面评级词标红】，其余正常
+        这样"月供 2,068""真实年化 22%""偏高/失控"等重点能从同字体里跳出来，
+        又不会整片花花绿绿。"""
+        pos, neg = self._POS_KEYS, self._NEG_KEYS
+
+        def _put():
+            for line in plain.split("\n"):
+                s = line.strip()
+                if not s:
+                    self.text.insert("end", "\n")
+                    continue
+                if s.startswith("【"):
+                    self.text.insert("end", line + "\n", "h")
+                elif s.startswith("⚠"):
+                    self.text.insert("end", line + "\n", "warn")
+                elif s.startswith(("→", "✅", "✓", "✗", "▶")):
+                    if any(k in s for k in pos):
+                        tag = "big"
+                    elif any(k in s for k in neg):
+                        tag = "bigbad"
+                    else:
+                        tag = "emph"
+                    self.text.insert("end", line + "\n", tag)
+                else:
+                    self._insert_line_tokens(line)
+        self._fill(_put)
+
+    def _insert_line_tokens(self, line):
+        """正文行内：数字加粗(num)、负面评级词标红(bad)，其余正文(normal)。"""
+        p = 0
+        for m in self._TOKEN_RE.finditer(line):
+            if m.start() > p:
+                self.text.insert("end", line[p:m.start()], "normal")
+            tok = m.group()
+            self.text.insert("end", tok, "bad" if tok in self._NEG_WORDS else "num")
+            p = m.end()
+        if p < len(line):
+            self.text.insert("end", line[p:], "normal")
+        self.text.insert("end", "\n", "normal")
 
 
 def make_radio_group(parent, title, options, default, descriptions=None,
@@ -506,6 +618,113 @@ class SalaryBreakdownBar(tk.Canvas):
             self.create_text(lx + 18, legend_y + 7, anchor="w", text=f"{label} {value:,.0f}",
                              font=(FONT_FAMILY, 9), fill="#555")
             lx += LEGEND_W
+
+
+class TrendLineChart(tk.Canvas):
+    """多系列折线趋势图（双 y 轴：左=金额，右=百分比）。
+
+    用于长期跟踪：把多次快照的指标画成折线，看结余/存款/成本等随时间的变化。
+    用法：
+        chart = TrendLineChart(parent, height=320); chart.pack(fill="both", expand=True)
+        chart.set_data(
+            labels=["6/21", "7/05", "7/20"],
+            series=[("月结余",  [4612, 5200, 6100],   COLOR_SURPLUS, "left"),
+                    ("存款",    [50000, 55000, 62000], COLOR_ACCENT,  "left"),
+                    ("月度成本",[2910, 2850, 2800],   "#d97706",     "left"),
+                    ("月负债",  [2000, 2000, 1500],   COLOR_DEFICIT, "left"),
+                    ("结余率%", [60, 65, 72],         "#8e44ad",     "right")])
+    series: [(名称, [值...], 颜色, "left"/"right"), ...]，长度需与 labels 一致。
+    """
+
+    def __init__(self, parent, height=320, **kw):
+        super().__init__(parent, height=height, bg="white", highlightthickness=0, **kw)
+        self._labels = []
+        self._series = []
+        self.bind("<Configure>", lambda e: self._draw())
+
+    def set_data(self, labels, series):
+        self._labels = list(labels or [])
+        self._series = list(series or [])
+        self._draw()
+
+    def _draw(self):
+        self.delete("all")
+        w = max(self.winfo_width(), 360)
+        h = max(self.winfo_height(), 220)
+        labels, series = self._labels, self._series
+        left_m, right_m, top_m, bot_m = 64, 52, 16, 64
+        x0, x1, y0, y1 = left_m, w - right_m, top_m, h - bot_m
+        chart_w, chart_h = x1 - x0, y1 - y0
+
+        if not labels or not series:
+            self.create_text(w // 2, h // 2, anchor="center",
+                             text="（暂无数据：关闭程序时存一份跟踪快照后，这里显示变化趋势）",
+                             font=(FONT_FAMILY, 10), fill="#999", width=w - 80)
+            return
+
+        n = len(labels)
+        # 左轴量纲（金额）：有负值则下探，全正则从 0 起
+        left_vals = [v for _, vals, _, axis in series if axis == "left" for v in vals]
+        if left_vals:
+            rmin, rmax = min(left_vals), max(left_vals)
+            if rmin == rmax:
+                rmin, rmax = rmin - 1, rmax + 1
+            pad = (rmax - rmin) * 0.1
+            lmax = rmax + pad
+            lmin = (rmin - pad) if rmin < 0 else 0
+        else:
+            lmin, lmax = 0, 1
+
+        def xl(i):
+            return (x0 + x1) / 2 if n == 1 else x0 + chart_w * i / (n - 1)
+
+        def yl(v):
+            return y0 + (1 - (v - lmin) / (lmax - lmin)) * chart_h
+
+        def yr(v):  # 右轴 0~100%
+            return y0 + (1 - max(0, min(100, v)) / 100) * chart_h
+
+        # 网格 + 左轴刻度
+        for k in range(5):
+            gy = y0 + chart_h * k / 4
+            self.create_line(x0, gy, x1, gy, fill="#eeeeee")
+            val = lmax - (lmax - lmin) * k / 4
+            self.create_text(x0 - 6, gy, anchor="e", text=format_money_short(val),
+                             font=(FONT_FAMILY, 8), fill="#888888")
+        # 右轴刻度
+        for v in (0, 25, 50, 75, 100):
+            self.create_text(x1 + 6, yr(v), anchor="w", text=f"{v}%",
+                             font=(FONT_FAMILY, 8), fill="#8e44ad")
+        self.create_text(x0 - 6, y0 - 6, anchor="se", text="元",
+                         font=(FONT_FAMILY, 8), fill="#888888")
+
+        # 折线 + 点
+        for name, vals, color, axis in series:
+            if len(vals) != n:
+                continue
+            ys = [yl(v) if axis == "left" else yr(v) for v in vals]
+            pts = [(xl(i), ys[i]) for i in range(n)]
+            if n >= 2:
+                flat = [c for p in pts for c in p]
+                self.create_line(flat, fill=color, width=2)
+            for px, py in pts:
+                self.create_oval(px - 3, py - 3, px + 3, py + 3, fill=color, outline="white")
+
+        # x 轴标签（多则抽稀）
+        step = max(1, (n + 4) // 5)
+        for i in range(0, n, step):
+            self.create_text(xl(i), y1 + 8, anchor="n", text=labels[i],
+                             font=(FONT_FAMILY, 8), fill="#666666")
+
+        # 图例（底部，自动换行）
+        lx, ly, leg_w = x0, h - 28, 96
+        for name, vals, color, axis in series:
+            if lx + leg_w > x1:
+                lx, ly = x0, ly + 16
+            self.create_rectangle(lx, ly - 7, lx + 12, ly + 5, fill=color, outline="")
+            self.create_text(lx + 16, ly - 1, anchor="w", text=name,
+                             font=(FONT_FAMILY, 9), fill="#444444")
+            lx += leg_w
 
 
 class ComparisonTable(ttk.Frame):

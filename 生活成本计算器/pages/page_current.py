@@ -20,6 +20,7 @@ class CurrentSituationPage(ttk.Frame):
         super().__init__(parent)
         self.app = app   # 用于跨页读取档案
         self._profile_city = ""  # 从档案同步的城市名，用于提示词
+        self._overrides = {}     # 用户按实际修改的支出项 {类别: 实际月额}（"按实际改"弹窗写入）
         self._scroll = W.ScrollableFrame(self)
         self._scroll.pack(fill="both", expand=True)
         self._content = self._scroll.inner
@@ -301,9 +302,15 @@ class CurrentSituationPage(ttk.Frame):
 
         ttk.Separator(res, orient="horizontal").grid(row=6, column=0, sticky="ew", pady=6)
 
-        # 5. 月度成本明细表
-        ttk.Label(res, text="月度生存成本明细", style="Header.TLabel").grid(
-            row=7, column=0, sticky="w")
+        # 5. 月度成本明细表（标题行右侧放「按实际改」按钮）
+        hdr = ttk.Frame(res)
+        hdr.grid(row=7, column=0, sticky="ew")
+        hdr.columnconfigure(0, weight=1)
+        ttk.Label(hdr, text="月度生存成本明细", style="Header.TLabel").grid(
+            row=0, column=0, sticky="w")
+        ttk.Button(hdr, text="✏ 按我的实际改",
+                   command=self._open_override_dialog).grid(
+            row=0, column=1, sticky="e", padx=4)
         self.table = W.ResultTreeview(
             res,
             columns=[("item", "项目", "w"), ("amount", "金额(元/月)", "e"),
@@ -337,6 +344,10 @@ class CurrentSituationPage(ttk.Frame):
 
     def _open_current_prompt(self):
         def build(city):
+            family = float(self.var_family.get() or 0)
+            has_partner = bool(self.var_has_partner.get())
+            partner_wage = float(self.var_partner_wage.get() or 0)
+            partner_ins = self.var_partner_ins.get()
             return E.build_current_situation_prompt(
                 int(self.var_age.get()), self.var_tier.get(),
                 float(self.var_wage.get()), self.var_ins.get(),
@@ -344,12 +355,80 @@ class CurrentSituationPage(ttk.Frame):
                 self.var_car.get(), int(self.var_kids.get()),
                 self.var_elderly.get(),
                 float(self.var_savings.get() or "0"), city,
-                children_by_age=self._children_by_age())
+                children_by_age=self._children_by_age(),
+                family_monthly=family, has_partner=has_partner,
+                partner_wage=partner_wage, partner_ins=partner_ins)
         W.open_prompt_dialog(
             self, "问 AI 的提示词（我的处境解读）", with_city=True,
             build_fn=build, initial_city=self._profile_city,
             intro="工具算的是「死数」。把下面这段复制到任意 AI，它会详细解读你的处境、"
                   "给可执行的建议。")
+
+    def _open_override_dialog(self):
+        """弹窗：让用户按实际支出覆盖工具估算值，确定后重算并刷新结果。
+        降低使用门槛（默认估算）+ 尊重知情用户（清楚就改成实际值）。"""
+        if not getattr(self, "_last_result", None):
+            self._set_interp("⚠️ 请先点「算一算」生成结果，再按实际修改。")
+            return
+        breakdown = self._last_result.get("breakdown", {})
+        cats = [c for c in ("住房", "饮食", "交通", "通讯日用", "给老家", "社保")
+                if c in breakdown]
+        if not cats:
+            return
+
+        win = tk.Toplevel(self)
+        win.title("按我的实际支出修改")
+        w, h = 440, 380
+        sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
+        win.geometry(f"{w}x{h}+{(sw-w)//2}+{(sh-h)//2}")
+        win.transient(self)
+
+        top = ttk.Frame(win, padding=10)
+        top.pack(fill="x")
+        ttk.Label(top, text="下面是工具估算的月支出，清楚就改成你的实际数字（留空=继续用估算）。",
+                  style="Sub.TLabel", wraplength=400, justify="left").pack(fill="x")
+
+        form = ttk.Frame(win, padding=10)
+        form.pack(fill="both", expand=True)
+        entries = {}
+        for i, cat in enumerate(cats):
+            ttk.Label(form, text=cat, width=8).grid(row=i, column=0, sticky="w", pady=3)
+            est = self._overrides.get(cat, breakdown.get(cat, ""))
+            var = tk.StringVar(value="" if est == "" else str(int(est)))
+            ttk.Entry(form, textvariable=var, width=12).grid(row=i, column=1, sticky="w", padx=4)
+            ttk.Label(form, text=f"估算 {breakdown.get(cat, 0):,.0f}",
+                      style="Sub.TLabel").grid(row=i, column=2, sticky="w")
+            entries[cat] = var
+
+        bot = ttk.Frame(win, padding=10)
+        bot.pack(fill="x")
+
+        def apply_changes():
+            new_ov = {}
+            for cat, var in entries.items():
+                s = var.get().strip()
+                if s == "":
+                    continue
+                try:
+                    v = float(s)
+                    if v >= 0:
+                        new_ov[cat] = v
+                except ValueError:
+                    pass
+            self._overrides = new_ov
+            win.destroy()
+            self.on_compute()
+
+        ttk.Button(bot, text="确定", style="AskAI.TButton",
+                   command=apply_changes).pack(side="left")
+
+        def reset():
+            self._overrides = {}
+            win.destroy()
+            self.on_compute()
+
+        ttk.Button(bot, text="恢复估算", command=reset).pack(side="left", padx=6)
+        ttk.Button(bot, text="取消", command=win.destroy).pack(side="right")
 
     # ---------- 计算 ----------
     def on_compute(self):
@@ -380,6 +459,7 @@ class CurrentSituationPage(ttk.Frame):
             has_housing_deduction=self.var_house_dedu.get(),
             has_continuing_education=self.var_cont_edu.get(),
             support_family_monthly=family_support,
+            overrides=self._overrides or None,
         )
         self._last_result = result
 
@@ -486,7 +566,4 @@ class CurrentSituationPage(ttk.Frame):
         self._set_interp(full)
 
     def _set_interp(self, text):
-        self.txt_interp.config(state="normal")
-        self.txt_interp.delete("1.0", "end")
-        self.txt_interp.insert("1.0", text)
-        self.txt_interp.config(state="disabled")
+        self.txt_interp.set_smart_text(text)

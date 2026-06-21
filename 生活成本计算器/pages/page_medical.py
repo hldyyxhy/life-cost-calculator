@@ -22,6 +22,7 @@ class MedicalPage(ttk.Frame):
     def __init__(self, parent, app=None):
         super().__init__(parent)
         self._profile_city = ""
+        self._profile = {}       # 缓存档案，供「问 AI」提示词补年龄/家庭/存款/负债
         self._nb = ttk.Notebook(self)
         self._nb.pack(fill="both", expand=True, padx=8, pady=8)
         self._build_inpatient(self._new_tab("① 住院报销估算"))
@@ -36,15 +37,13 @@ class MedicalPage(ttk.Frame):
         return sf.inner
 
     def apply_profile(self, prof):
+        self._profile = prof
         self._profile_city = prof.get("city", "")
         if hasattr(self, "var_med_city") and self._profile_city:
             self.var_med_city.set(self._profile_city)
 
     def _set_note(self, tw, text):
-        tw.config(state="normal")
-        tw.delete("1.0", "end")
-        tw.insert("1.0", text)
-        tw.config(state="disabled")
+        tw.set_smart_text(text)
 
     # ============================================================
     # ① 住院报销估算
@@ -116,7 +115,9 @@ class MedicalPage(ttk.Frame):
             self, "问 AI（医保报销）", with_city=False,
             build_fn=lambda c: E.build_medical_prompt(
                 city or self._profile_city or "（请填城市）",
-                self.var_med_id.get(), cost, self.var_med_retired.get()),
+                self.var_med_id.get(), cost, self.var_med_retired.get(),
+                remote=_REMOTE_MAP.get(self.var_med_remote.get(), "none"),
+                profile=self._profile),
             intro="把这段复制给 AI，填参保城市，它会按当地医保政策算基本+大病报销、自付，给操作步骤。")
 
     # ============================================================

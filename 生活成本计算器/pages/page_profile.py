@@ -103,7 +103,8 @@ class ProfilePage(ttk.Frame):
         pages = self.app.pages if self.app else {}
         targets = [("处境", "current"), ("对比", "compare"),
                    ("三座山", "milestones"), ("权益", "rights"),
-                   ("求助与反诈", "assist"), ("医保就医", "medical")]
+                   ("求助与反诈", "assist"), ("医保就医", "medical"),
+                   ("借贷", "debt")]
         synced = []
         for label, key in targets:
             pg = pages.get(key)
