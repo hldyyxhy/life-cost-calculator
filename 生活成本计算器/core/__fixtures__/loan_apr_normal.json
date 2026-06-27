@@ -1,0 +1,19 @@
+{
+  "name": "loan_apr_normal",
+  "source": "真实年化反算·正常档",
+  "input": {
+    "principal": 100000,
+    "monthlyPayment": 3000,
+    "periods": 36
+  },
+  "expected": {
+    "monthly_irr": 0.004220667545383194,
+    "annual_irr": 0.05184043613856315,
+    "nominal_apr": 0.05064801054459833,
+    "total_payment": 108000,
+    "interest": 8000,
+    "interest_ratio": 0.08,
+    "level": "正常",
+    "note": "真实年化 5.2%，处于正常区间。"
+  }
+}

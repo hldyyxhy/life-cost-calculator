@@ -1,0 +1,47 @@
+{
+  "name": "data_unemployment",
+  "source": "失业金·多城",
+  "batch": true,
+  "cases": [
+    {
+      "note": "北京",
+      "input": {
+        "city": "北京"
+      },
+      "expected": [
+        2322,
+        "北京标准"
+      ]
+    },
+    {
+      "note": "广州",
+      "input": {
+        "city": "广州"
+      },
+      "expected": [
+        2250,
+        "按广东最低工资2500×90%估算"
+      ]
+    },
+    {
+      "note": "成都",
+      "input": {
+        "city": "成都"
+      },
+      "expected": [
+        2097,
+        "按四川最低工资2330×90%估算"
+      ]
+    },
+    {
+      "note": "未知",
+      "input": {
+        "city": "火星"
+      },
+      "expected": [
+        null,
+        "需查阅当地人社局公告"
+      ]
+    }
+  ]
+}

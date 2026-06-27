@@ -1,0 +1,15 @@
+{
+  "name": "risk_low_savings",
+  "source": "抗风险·存款2万（大病high）",
+  "input": {
+    "savings": 20000,
+    "survivalBaseline": 2626
+  },
+  "expected": {
+    "unemployment_months": 7.6,
+    "emergency_fund_low": 7878,
+    "emergency_fund_high": 15756,
+    "emergency_gap": -12122,
+    "severe_illness_risk": "high"
+  }
+}

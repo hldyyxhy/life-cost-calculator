@@ -1,0 +1,139 @@
+{
+  "name": "loan_spiral",
+  "source": "__main__ 债务4",
+  "input": {
+    "initialBalance": 10000,
+    "annualRate": 0.24,
+    "months": 24,
+    "actualMonthlyPayment": 0
+  },
+  "expected": {
+    "final_balance": 16084.372494752251,
+    "doubled": false,
+    "doubling_month": null,
+    "monthly_snapshots": [
+      {
+        "month": 1,
+        "balance": 10200.0,
+        "interest_accrued": 200.0
+      },
+      {
+        "month": 2,
+        "balance": 10404.0,
+        "interest_accrued": 204.0
+      },
+      {
+        "month": 3,
+        "balance": 10612.08,
+        "interest_accrued": 208.08
+      },
+      {
+        "month": 4,
+        "balance": 10824.3216,
+        "interest_accrued": 212.2416
+      },
+      {
+        "month": 5,
+        "balance": 11040.808031999999,
+        "interest_accrued": 216.48643199999998
+      },
+      {
+        "month": 6,
+        "balance": 11261.62419264,
+        "interest_accrued": 220.81616064
+      },
+      {
+        "month": 7,
+        "balance": 11486.8566764928,
+        "interest_accrued": 225.2324838528
+      },
+      {
+        "month": 8,
+        "balance": 11716.593810022656,
+        "interest_accrued": 229.737133529856
+      },
+      {
+        "month": 9,
+        "balance": 11950.925686223109,
+        "interest_accrued": 234.3318762004531
+      },
+      {
+        "month": 10,
+        "balance": 12189.944199947571,
+        "interest_accrued": 239.01851372446217
+      },
+      {
+        "month": 11,
+        "balance": 12433.743083946523,
+        "interest_accrued": 243.79888399895142
+      },
+      {
+        "month": 12,
+        "balance": 12682.417945625453,
+        "interest_accrued": 248.67486167893048
+      },
+      {
+        "month": 13,
+        "balance": 12936.066304537962,
+        "interest_accrued": 253.64835891250908
+      },
+      {
+        "month": 14,
+        "balance": 13194.787630628722,
+        "interest_accrued": 258.72132609075925
+      },
+      {
+        "month": 15,
+        "balance": 13458.683383241296,
+        "interest_accrued": 263.8957526125744
+      },
+      {
+        "month": 16,
+        "balance": 13727.857050906121,
+        "interest_accrued": 269.1736676648259
+      },
+      {
+        "month": 17,
+        "balance": 14002.414191924243,
+        "interest_accrued": 274.5571410181224
+      },
+      {
+        "month": 18,
+        "balance": 14282.462475762728,
+        "interest_accrued": 280.04828383848485
+      },
+      {
+        "month": 19,
+        "balance": 14568.111725277982,
+        "interest_accrued": 285.64924951525455
+      },
+      {
+        "month": 20,
+        "balance": 14859.473959783541,
+        "interest_accrued": 291.3622345055596
+      },
+      {
+        "month": 21,
+        "balance": 15156.663438979213,
+        "interest_accrued": 297.18947919567086
+      },
+      {
+        "month": 22,
+        "balance": 15459.796707758796,
+        "interest_accrued": 303.1332687795843
+      },
+      {
+        "month": 23,
+        "balance": 15768.992641913972,
+        "interest_accrued": 309.19593415517596
+      },
+      {
+        "month": 24,
+        "balance": 16084.372494752251,
+        "interest_accrued": 315.3798528382794
+      }
+    ],
+    "breakeven_monthly": 200.0,
+    "note": "「借新还旧、只还最低、以贷养贷」是债务失控的标准路径：利息按复利指数增长，你还的钱不够覆盖利息，缺口就滚进本金再生利息。\n每月实还 0 元 < 每月新增利息 200 元，差额持续滚进本金——24 个月后债务从 10,000 涨到 16,084 元。\n本期间未翻倍，但按 72 法则约 3 年会翻倍。\n要止血，每月至少得还 200 元（= 初始债务的月利息）才能让债务不再增长，之后再往上加码还本金。\n⚠️ 若这笔债真实年化超 36%，超过部分约定无效、可主张返还（见「反算真实年化」）。"
+  }
+}

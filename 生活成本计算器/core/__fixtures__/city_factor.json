@@ -1,0 +1,56 @@
+{
+  "name": "city_factor",
+  "source": "子依赖基准",
+  "batch": true,
+  "cases": [
+    {
+      "note": "一线",
+      "input": {
+        "tier": "一线"
+      },
+      "expected": 2.0
+    },
+    {
+      "note": "新一线",
+      "input": {
+        "tier": "新一线"
+      },
+      "expected": 1.5
+    },
+    {
+      "note": "二线",
+      "input": {
+        "tier": "二线"
+      },
+      "expected": 1.2
+    },
+    {
+      "note": "三线",
+      "input": {
+        "tier": "三线"
+      },
+      "expected": 1.0
+    },
+    {
+      "note": "四线",
+      "input": {
+        "tier": "四线"
+      },
+      "expected": 0.82
+    },
+    {
+      "note": "五线",
+      "input": {
+        "tier": "五线"
+      },
+      "expected": 0.7
+    },
+    {
+      "note": "未知→默认1.0",
+      "input": {
+        "tier": "火星"
+      },
+      "expected": 1.0
+    }
+  ]
+}

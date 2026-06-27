@@ -1,0 +1,29 @@
+{
+  "name": "data_injury_one_time",
+  "source": "一次性伤残补助金",
+  "batch": true,
+  "cases": [
+    {
+      "note": "7级6000",
+      "input": {
+        "grade": 7,
+        "monthlyWage": 6000
+      },
+      "expected": [
+        13,
+        78000
+      ]
+    },
+    {
+      "note": "10级3000",
+      "input": {
+        "grade": 10,
+        "monthlyWage": 3000
+      },
+      "expected": [
+        7,
+        21000
+      ]
+    }
+  ]
+}

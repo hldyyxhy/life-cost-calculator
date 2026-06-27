@@ -1,0 +1,167 @@
+{
+  "name": "debt_payoff_snowball",
+  "source": "__main__ 债务3",
+  "input": {
+    "debts": [
+      {
+        "name": "信用卡",
+        "balance": 3000,
+        "annual_rate": 0.18,
+        "min_monthly": 300
+      },
+      {
+        "name": "网贷",
+        "balance": 10000,
+        "annual_rate": 0.36,
+        "min_monthly": 500
+      }
+    ],
+    "method": "snowball",
+    "extraMonthly": 500
+  },
+  "expected": {
+    "method": "snowball",
+    "payoff_order": [
+      {
+        "name": "信用卡",
+        "payoff_month": 4
+      },
+      {
+        "name": "网贷",
+        "payoff_month": 15
+      }
+    ],
+    "total_months": 15,
+    "total_payment": 15953.631894207836,
+    "total_interest": 2953.631894207838,
+    "monthly_snapshots": [
+      {
+        "month": 1,
+        "balances": {
+          "信用卡": 3000.0,
+          "网贷": 10000.0
+        },
+        "target": "信用卡",
+        "extra": 500
+      },
+      {
+        "month": 2,
+        "balances": {
+          "信用卡": 2245.0,
+          "网贷": 9800.0
+        },
+        "target": "信用卡",
+        "extra": 500
+      },
+      {
+        "month": 3,
+        "balances": {
+          "信用卡": 1478.6750000000002,
+          "网贷": 9594.0
+        },
+        "target": "信用卡",
+        "extra": 500
+      },
+      {
+        "month": 4,
+        "balances": {
+          "信用卡": 700.8551250000003,
+          "网贷": 9381.82
+        },
+        "target": "信用卡",
+        "extra": 500
+      },
+      {
+        "month": 5,
+        "balances": {
+          "网贷": 9074.642551874998
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 6,
+        "balances": {
+          "网贷": 8346.881828431247
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 7,
+        "balances": {
+          "网贷": 7597.288283284184
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 8,
+        "balances": {
+          "网贷": 6825.20693178271
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 9,
+        "balances": {
+          "网贷": 6029.963139736191
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 10,
+        "balances": {
+          "网贷": 5210.862033928277
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 11,
+        "balances": {
+          "网贷": 4367.187894946125
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 12,
+        "balances": {
+          "网贷": 3498.203531794509
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 13,
+        "balances": {
+          "网贷": 2603.1496377483445
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 14,
+        "balances": {
+          "网贷": 1681.2441268807947
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 15,
+        "balances": {
+          "网贷": 731.6814506872186
+        },
+        "target": "网贷",
+        "extra": 500
+      }
+    ],
+    "unpayable": false,
+    "unpayable_reason": "",
+    "note": "按「雪球法」：15 个月还清全部债务，总共付出 15,954 元，其中利息 2,954 元。\n核心动作：每笔债只还最低还款（避免违约催收），把所有挤得出的余钱集中砸向余额最小的那笔（雪球法：先尝到结清的甜头，靠成就感撑下去）。"
+  }
+}

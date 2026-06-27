@@ -1,0 +1,106 @@
+{
+  "name": "tax_brackets",
+  "source": "子依赖基准",
+  "batch": true,
+  "cases": [
+    {
+      "note": "taxable=0",
+      "input": {
+        "taxableMonthly": 0
+      },
+      "expected": [
+        0.0,
+        0.0,
+        0
+      ]
+    },
+    {
+      "note": "taxable=3000",
+      "input": {
+        "taxableMonthly": 3000
+      },
+      "expected": [
+        90.0,
+        0.03,
+        0
+      ]
+    },
+    {
+      "note": "taxable=3001",
+      "input": {
+        "taxableMonthly": 3001
+      },
+      "expected": [
+        90.10000000000002,
+        0.1,
+        210
+      ]
+    },
+    {
+      "note": "taxable=10000",
+      "input": {
+        "taxableMonthly": 10000
+      },
+      "expected": [
+        790.0,
+        0.1,
+        210
+      ]
+    },
+    {
+      "note": "taxable=12000",
+      "input": {
+        "taxableMonthly": 12000
+      },
+      "expected": [
+        990.0,
+        0.1,
+        210
+      ]
+    },
+    {
+      "note": "taxable=25000",
+      "input": {
+        "taxableMonthly": 25000
+      },
+      "expected": [
+        3590.0,
+        0.2,
+        1410
+      ]
+    },
+    {
+      "note": "taxable=80000",
+      "input": {
+        "taxableMonthly": 80000
+      },
+      "expected": [
+        20840.0,
+        0.35,
+        7160
+      ]
+    },
+    {
+      "note": "taxable=80001",
+      "input": {
+        "taxableMonthly": 80001
+      },
+      "expected": [
+        20840.450000000004,
+        0.45,
+        15160
+      ]
+    },
+    {
+      "note": "taxable=200000",
+      "input": {
+        "taxableMonthly": 200000
+      },
+      "expected": [
+        74840.0,
+        0.45,
+        15160
+      ]
+    }
+  ]
+}

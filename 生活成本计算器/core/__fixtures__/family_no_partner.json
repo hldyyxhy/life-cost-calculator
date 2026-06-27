@@ -1,0 +1,16 @@
+{
+  "name": "family_no_partner",
+  "source": "无伴侣·partnerWage=0",
+  "input": {
+    "selfAge": 30,
+    "selfWage": 6000,
+    "selfTier": "二线",
+    "partnerWage": 0
+  },
+  "expected": {
+    "partner_income_net": 0,
+    "partner_surplus": 0,
+    "family_surplus": 2052,
+    "family_surplus_rate": 37.1
+  }
+}

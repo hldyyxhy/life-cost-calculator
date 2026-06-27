@@ -1,0 +1,19 @@
+{
+  "name": "cost-calc-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "生活成本计算器 TypeScript 核心（翻译自 Python，与 UI 框架无关，离线端侧计算）",
+  "scripts": {
+    "verify": "tsx scripts/verify.ts",
+    "typecheck": "tsc --noEmit",
+    "export:data": "python scripts/export_data.py",
+    "dump": "python scripts/dump_baselines.py",
+    "regen": "python scripts/export_data.py && python scripts/dump_baselines.py"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.5.4",
+    "@types/node": "^20.14.0"
+  }
+}

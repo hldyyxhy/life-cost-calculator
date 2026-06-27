@@ -1,0 +1,158 @@
+{
+  "name": "debt_payoff_avalanche",
+  "source": "__main__ 债务3",
+  "input": {
+    "debts": [
+      {
+        "name": "信用卡",
+        "balance": 3000,
+        "annual_rate": 0.18,
+        "min_monthly": 300
+      },
+      {
+        "name": "网贷",
+        "balance": 10000,
+        "annual_rate": 0.36,
+        "min_monthly": 500
+      }
+    ],
+    "method": "avalanche",
+    "extraMonthly": 500
+  },
+  "expected": {
+    "method": "avalanche",
+    "payoff_order": [
+      {
+        "name": "信用卡",
+        "payoff_month": 11
+      },
+      {
+        "name": "网贷",
+        "payoff_month": 13
+      }
+    ],
+    "total_months": 13,
+    "total_payment": 15340.884215430437,
+    "total_interest": 2340.8842154304357,
+    "monthly_snapshots": [
+      {
+        "month": 1,
+        "balances": {
+          "信用卡": 3000.0,
+          "网贷": 10000.0
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 2,
+        "balances": {
+          "信用卡": 2745.0,
+          "网贷": 9300.0
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 3,
+        "balances": {
+          "信用卡": 2486.175,
+          "网贷": 8579.0
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 4,
+        "balances": {
+          "信用卡": 2223.467625,
+          "网贷": 7836.370000000001
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 5,
+        "balances": {
+          "信用卡": 1956.8196393750004,
+          "网贷": 7071.4611
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 6,
+        "balances": {
+          "信用卡": 1686.1719339656254,
+          "网贷": 6283.6049330000005
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 7,
+        "balances": {
+          "信用卡": 1411.4645129751098,
+          "网贷": 5472.1130809900005
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 8,
+        "balances": {
+          "信用卡": 1132.6364806697363,
+          "网贷": 4636.276473419701
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 9,
+        "balances": {
+          "信用卡": 849.6260278797824,
+          "网贷": 3775.3647676222918
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 10,
+        "balances": {
+          "信用卡": 562.3704182979792,
+          "网贷": 2888.6257106509606
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 11,
+        "balances": {
+          "信用卡": 270.8059745724489,
+          "网贷": 1975.2844819704897
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 12,
+        "balances": {
+          "网贷": 1009.4110806206402
+        },
+        "target": "网贷",
+        "extra": 500
+      },
+      {
+        "month": 13,
+        "balances": {
+          "网贷": 39.69341303925944
+        },
+        "target": "",
+        "extra": 500
+      }
+    ],
+    "unpayable": false,
+    "unpayable_reason": "",
+    "note": "按「雪崩法」：13 个月还清全部债务，总共付出 15,341 元，其中利息 2,341 元。\n核心动作：每笔债只还最低还款（避免违约催收），把所有挤得出的余钱集中砸向利率最高的那笔（雪崩法：数学最优，总利息最少）。"
+  }
+}

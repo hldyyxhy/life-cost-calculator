@@ -1,0 +1,31 @@
+{
+  "name": "data_injury_extra",
+  "source": "各省工伤医疗/就业补助",
+  "batch": true,
+  "cases": [
+    {
+      "note": "广东7级",
+      "input": {
+        "province": "广东",
+        "grade": 7
+      },
+      "expected": [
+        6,
+        25,
+        "本人工资"
+      ]
+    },
+    {
+      "note": "未知省",
+      "input": {
+        "province": "火星省",
+        "grade": 7
+      },
+      "expected": [
+        null,
+        null,
+        "数据未收录，请查阅当地公告"
+      ]
+    }
+  ]
+}

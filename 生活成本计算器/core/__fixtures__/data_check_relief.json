@@ -1,0 +1,64 @@
+{
+  "name": "data_check_relief",
+  "source": "本地救助对照",
+  "batch": true,
+  "cases": [
+    {
+      "note": "上海800(符合)",
+      "input": {
+        "city": "上海",
+        "perCapitaIncome": 800,
+        "familySize": 3,
+        "asset": 5000
+      },
+      "expected": {
+        "dibao": 1650,
+        "edge": 2475.0,
+        "edge_max": 3300.0,
+        "tier_matched": "符合低保",
+        "head": "✅ 人均月收入 800 元 < 当地低保 1650 元/月（上海 标准）",
+        "color": "surplus",
+        "note": "✅ 人均月收入 800 元 < 当地低保 1650 元/月（上海 标准）\n→ 大概率符合低保，可领差额补助（补到 1650 元/月）。\n申请：户籍地街道/乡镇民政，或 12345 转民政；带身份证、收入/财产证明。\n\n【财产提醒】当地金融资产限制：≤5.94万（36个月低保）。你填的人均金融资产 5,000 元，未明显超标。\n\n【临时救助】遇急难（大病/意外）可申请，约低保月标准 × 2~12 倍。",
+        "estimated": false
+      }
+    },
+    {
+      "note": "长沙1500(边缘)",
+      "input": {
+        "city": "长沙",
+        "perCapitaIncome": 1500,
+        "familySize": 3,
+        "asset": null
+      },
+      "expected": {
+        "dibao": 770,
+        "edge": 1155.0,
+        "edge_max": 1540.0,
+        "tier_matched": "距边缘线较近",
+        "head": "人均收入 1,500，距低保边缘线（1,155）差 345 元",
+        "color": "neutral",
+        "note": "人均收入 1,500，距低保边缘线（1,155）差 345 元\n→ 暂不符合，但若收入下降或遇大病/失业，可申请临时救助（低保 × 2~12 倍）。\n\n【临时救助】遇急难（大病/意外）可申请，约低保月标准 × 2~12 倍。",
+        "estimated": false
+      }
+    },
+    {
+      "note": "台州3000(不符)",
+      "input": {
+        "city": "台州",
+        "perCapitaIncome": 3000,
+        "familySize": 1,
+        "asset": null
+      },
+      "expected": {
+        "dibao": 1190,
+        "edge": 1785.0,
+        "edge_max": 2380.0,
+        "tier_matched": "不符合",
+        "head": "人均收入 3,000 明显高于低保边缘线（1,785），不符合低保。",
+        "color": "deficit",
+        "note": "人均收入 3,000 明显高于低保边缘线（1,785），不符合低保。\n→ 工具只是粗算，最终以当地民政认定为准。\n\n【临时救助】遇急难（大病/意外）可申请，约低保月标准 × 2~12 倍。",
+        "estimated": false
+      }
+    }
+  ]
+}

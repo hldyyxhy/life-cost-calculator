@@ -1,0 +1,60 @@
+{
+  "name": "normalize_children",
+  "source": "子依赖基准",
+  "batch": true,
+  "cases": [
+    {
+      "note": "空+0孩",
+      "input": {
+        "childrenByAge": {},
+        "numChildren": 0
+      },
+      "expected": {}
+    },
+    {
+      "note": "None+0孩",
+      "input": {
+        "childrenByAge": null,
+        "numChildren": 0
+      },
+      "expected": {}
+    },
+    {
+      "note": "空+2孩兜底中小学",
+      "input": {
+        "childrenByAge": {},
+        "numChildren": 2
+      },
+      "expected": {
+        "中小学（6-18岁）": 2
+      }
+    },
+    {
+      "note": "过滤0值段",
+      "input": {
+        "childrenByAge": {
+          "3岁以下（婴幼儿）": 1,
+          "中小学（6-18岁）": 0
+        },
+        "numChildren": 0
+      },
+      "expected": {
+        "3岁以下（婴幼儿）": 1
+      }
+    },
+    {
+      "note": "多段并存",
+      "input": {
+        "childrenByAge": {
+          "大学在读（18岁+）": 2,
+          "中小学（6-18岁）": 1
+        },
+        "numChildren": 0
+      },
+      "expected": {
+        "大学在读（18岁+）": 2,
+        "中小学（6-18岁）": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "risk_basic",
+  "source": "抗风险·存款5万/底线2626",
+  "input": {
+    "savings": 50000,
+    "survivalBaseline": 2626
+  },
+  "expected": {
+    "unemployment_months": 19.0,
+    "emergency_fund_low": 7878,
+    "emergency_fund_high": 15756,
+    "emergency_gap": -42122,
+    "severe_illness_risk": "medium"
+  }
+}

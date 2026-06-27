@@ -1,0 +1,27 @@
+{
+  "name": "debt_payoff_unpayable",
+  "source": "__main__ 失控用例",
+  "input": {
+    "debts": [
+      {
+        "name": "高息贷",
+        "balance": 10000,
+        "annual_rate": 0.36,
+        "min_monthly": 200
+      }
+    ],
+    "method": "avalanche",
+    "extraMonthly": 0
+  },
+  "expected": {
+    "method": "avalanche",
+    "unpayable": true,
+    "unpayable_reason": "「高息贷」按当前最低月还款 200 元永远还不清：它每月新增利息就有 300 元（年化 36%），最低还款连利息都盖不住，本金只会越滚越多。要压住这笔，每月至少得还 301 元。\n这是信用卡最低还款（通常只有账单的 10% 左右）的真实陷阱——你以为在还钱，其实大部分在还利息、本金纹丝不动。",
+    "note": "",
+    "payoff_order": [],
+    "total_months": null,
+    "total_payment": 0,
+    "total_interest": 0,
+    "monthly_snapshots": []
+  }
+}

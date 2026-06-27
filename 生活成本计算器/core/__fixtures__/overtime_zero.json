@@ -1,0 +1,19 @@
+{
+  "name": "overtime_zero",
+  "source": "加班费 total=0 分支",
+  "input": {
+    "monthlyWage": 6000,
+    "weekdayOt": 0,
+    "weekendOt": 0,
+    "holidayOt": 0
+  },
+  "expected": {
+    "hourly_wage": 34.48275862068966,
+    "weekday_pay": 0.0,
+    "weekend_pay": 0.0,
+    "holiday_pay": 0.0,
+    "total_overtime": 0.0,
+    "detail": [],
+    "note": "你的法定时薪约 34.48 元/小时（月工资 ÷ 21.75 天 ÷ 8 小时）。还没填加班时长——把每月各类加班小时填上，就能算出依法应得的加班费。\n提示：企业常以「包薪」「综合工时」或只给调休为由不给加班费，这不合法；只要你加了班且企业没依法付钱，差额就是被克扣的。"
+  }
+}

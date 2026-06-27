@@ -1,0 +1,19 @@
+{
+  "name": "loan_apr_extreme",
+  "source": "真实年化反算·极高档",
+  "input": {
+    "principal": 5000,
+    "monthlyPayment": 500,
+    "periods": 12
+  },
+  "expected": {
+    "monthly_irr": 0.029228540769133615,
+    "annual_irr": 0.4129989841496158,
+    "nominal_apr": 0.3507424892296034,
+    "total_payment": 6000,
+    "interest": 1000,
+    "interest_ratio": 0.2,
+    "level": "极高",
+    "note": "真实年化 41.3%，超过 36% 红线。按司法解释，超过 36% 的利息约定无效，已还的超额部分可主张返还。"
+  }
+}

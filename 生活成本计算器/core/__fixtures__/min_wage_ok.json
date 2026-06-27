@@ -1,0 +1,16 @@
+{
+  "name": "min_wage_ok",
+  "source": "__main__ 权益2（3500/三线，高于最低）",
+  "input": {
+    "monthlyWage": 3500,
+    "tier": "三线"
+  },
+  "expected": {
+    "min_wage": 2000,
+    "below": false,
+    "ratio": 1.75,
+    "monthly_wage": 3500,
+    "tier": "三线",
+    "note": "你所在地区（三线城市）最低工资约 2,000 元/月，你的月薪 3,500 元是最低工资的 175.0%，高于最低线，合法。"
+  }
+}

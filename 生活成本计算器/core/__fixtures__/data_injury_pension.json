@@ -1,0 +1,31 @@
+{
+  "name": "data_injury_pension",
+  "source": "伤残津贴",
+  "batch": true,
+  "cases": [
+    {
+      "note": "3级6000",
+      "input": {
+        "grade": 3,
+        "monthlyWage": 6000
+      },
+      "expected": [
+        0.8,
+        4800.0,
+        "工伤保险基金"
+      ]
+    },
+    {
+      "note": "8级6000(无)",
+      "input": {
+        "grade": 8,
+        "monthlyWage": 6000
+      },
+      "expected": [
+        null,
+        0,
+        "无（7-10级不享受按月伤残津贴）"
+      ]
+    }
+  ]
+}

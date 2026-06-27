@@ -1,0 +1,19 @@
+{
+  "name": "loan_apr_high",
+  "source": "真实年化反算·偏高/高利贷档",
+  "input": {
+    "principal": 10000,
+    "monthlyPayment": 920,
+    "periods": 12
+  },
+  "expected": {
+    "monthly_irr": 0.015559807406858694,
+    "annual_irr": 0.203555314017549,
+    "nominal_apr": 0.18671768888230433,
+    "total_payment": 11040,
+    "interest": 1040,
+    "interest_ratio": 0.104,
+    "level": "偏高",
+    "note": "真实年化 20.4%，超过民间借贷利率上限（LPR 的 4 倍，约 14%~15%）。不算高利贷，但成本明显偏高。"
+  }
+}

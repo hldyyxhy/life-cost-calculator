@@ -1,0 +1,9 @@
+{
+  "name": "prompt_help_unknown",
+  "source": "求助·未知场景",
+  "input": {
+    "sceneKey": "不存在",
+    "city": ""
+  },
+  "expected": "（未知场景）"
+}

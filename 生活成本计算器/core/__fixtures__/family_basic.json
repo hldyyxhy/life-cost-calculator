@@ -1,0 +1,18 @@
+{
+  "name": "family_basic",
+  "source": "双收入·本人6000+伴侣5000/二线",
+  "input": {
+    "selfAge": 30,
+    "selfWage": 6000,
+    "selfTier": "二线",
+    "partnerWage": 5000,
+    "partnerTier": "二线",
+    "partnerInsurance": "在职（单位缴）"
+  },
+  "expected": {
+    "partner_income_net": 4540,
+    "partner_surplus": 2980,
+    "family_surplus": 5032,
+    "family_surplus_rate": 50.0
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "name": "data_dibao",
+  "source": "低保·多城(四级fallback)",
+  "batch": true,
+  "cases": [
+    {
+      "note": "上海(精确)",
+      "input": {
+        "city": "上海"
+      },
+      "expected": [
+        1650,
+        "上海 标准",
+        false
+      ]
+    },
+    {
+      "note": "深圳(②含括号)",
+      "input": {
+        "city": "深圳"
+      },
+      "expected": [
+        1563,
+        "广东（深圳） 标准",
+        false
+      ]
+    },
+    {
+      "note": "长沙(③省)",
+      "input": {
+        "city": "长沙"
+      },
+      "expected": [
+        770,
+        "湖南（长沙） 标准",
+        false
+      ]
+    },
+    {
+      "note": "拉萨(④tier)",
+      "input": {
+        "city": "拉萨"
+      },
+      "expected": [
+        1027,
+        "西藏 全省统一（含 拉萨）",
+        false
+      ]
+    },
+    {
+      "note": "未知",
+      "input": {
+        "city": "火星"
+      },
+      "expected": [
+        null,
+        "未找到该地数据，请咨询当地民政（街道/12345）",
+        true
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.tsbuildinfo
+# tsx 直接跑 .ts，不提交编译产物（数据 JSON 与基准 fixture 必须提交）
+src/**/*.js
+scripts/**/*.js

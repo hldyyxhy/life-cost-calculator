@@ -1,0 +1,10 @@
+{
+  "name": "target_wage_up",
+  "source": "工资预估·三线→一线",
+  "input": {
+    "wage": 5000,
+    "currentTier": "三线",
+    "targetTier": "一线"
+  },
+  "expected": 8500.0
+}

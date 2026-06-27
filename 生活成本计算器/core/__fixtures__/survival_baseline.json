@@ -1,0 +1,151 @@
+{
+  "name": "survival_baseline",
+  "source": "子依赖基准",
+  "batch": true,
+  "cases": [
+    {
+      "note": "一线/在职（单位缴）",
+      "input": {
+        "tier": "一线",
+        "insuranceMode": "在职（单位缴）"
+      },
+      "expected": 4370
+    },
+    {
+      "note": "一线/灵活就业（全自缴）",
+      "input": {
+        "tier": "一线",
+        "insuranceMode": "灵活就业（全自缴）"
+      },
+      "expected": 5660
+    },
+    {
+      "note": "一线/不缴社保",
+      "input": {
+        "tier": "一线",
+        "insuranceMode": "不缴社保"
+      },
+      "expected": 3610
+    },
+    {
+      "note": "新一线/在职（单位缴）",
+      "input": {
+        "tier": "新一线",
+        "insuranceMode": "在职（单位缴）"
+      },
+      "expected": 3228
+    },
+    {
+      "note": "新一线/灵活就业（全自缴）",
+      "input": {
+        "tier": "新一线",
+        "insuranceMode": "灵活就业（全自缴）"
+      },
+      "expected": 4188
+    },
+    {
+      "note": "新一线/不缴社保",
+      "input": {
+        "tier": "新一线",
+        "insuranceMode": "不缴社保"
+      },
+      "expected": 2708
+    },
+    {
+      "note": "二线/在职（单位缴）",
+      "input": {
+        "tier": "二线",
+        "insuranceMode": "在职（单位缴）"
+      },
+      "expected": 2626
+    },
+    {
+      "note": "二线/灵活就业（全自缴）",
+      "input": {
+        "tier": "二线",
+        "insuranceMode": "灵活就业（全自缴）"
+      },
+      "expected": 3446
+    },
+    {
+      "note": "二线/不缴社保",
+      "input": {
+        "tier": "二线",
+        "insuranceMode": "不缴社保"
+      },
+      "expected": 2166
+    },
+    {
+      "note": "三线/在职（单位缴）",
+      "input": {
+        "tier": "三线",
+        "insuranceMode": "在职（单位缴）"
+      },
+      "expected": 2205
+    },
+    {
+      "note": "三线/灵活就业（全自缴）",
+      "input": {
+        "tier": "三线",
+        "insuranceMode": "灵活就业（全自缴）"
+      },
+      "expected": 2805
+    },
+    {
+      "note": "三线/不缴社保",
+      "input": {
+        "tier": "三线",
+        "insuranceMode": "不缴社保"
+      },
+      "expected": 1805
+    },
+    {
+      "note": "四线/在职（单位缴）",
+      "input": {
+        "tier": "四线",
+        "insuranceMode": "在职（单位缴）"
+      },
+      "expected": 1850
+    },
+    {
+      "note": "四线/灵活就业（全自缴）",
+      "input": {
+        "tier": "四线",
+        "insuranceMode": "灵活就业（全自缴）"
+      },
+      "expected": 2380
+    },
+    {
+      "note": "四线/不缴社保",
+      "input": {
+        "tier": "四线",
+        "insuranceMode": "不缴社保"
+      },
+      "expected": 1480
+    },
+    {
+      "note": "五线/在职（单位缴）",
+      "input": {
+        "tier": "五线",
+        "insuranceMode": "在职（单位缴）"
+      },
+      "expected": 1604
+    },
+    {
+      "note": "五线/灵活就业（全自缴）",
+      "input": {
+        "tier": "五线",
+        "insuranceMode": "灵活就业（全自缴）"
+      },
+      "expected": 2064
+    },
+    {
+      "note": "五线/不缴社保",
+      "input": {
+        "tier": "五线",
+        "insuranceMode": "不缴社保"
+      },
+      "expected": 1264
+    }
+  ]
+}

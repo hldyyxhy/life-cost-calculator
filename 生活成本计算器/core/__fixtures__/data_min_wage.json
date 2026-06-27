@@ -1,0 +1,28 @@
+{
+  "name": "data_min_wage",
+  "source": "最低工资·多城",
+  "batch": true,
+  "cases": [
+    {
+      "note": "北京",
+      "input": {
+        "city": "北京"
+      },
+      "expected": 2540
+    },
+    {
+      "note": "成都",
+      "input": {
+        "city": "成都"
+      },
+      "expected": 2330
+    },
+    {
+      "note": "未知",
+      "input": {
+        "city": "火星"
+      },
+      "expected": null
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "name": "data_unemploy_duration",
+  "source": "失业金领取月数",
+  "batch": true,
+  "cases": [
+    {
+      "note": "6年",
+      "input": {
+        "years": 6
+      },
+      "expected": 18
+    },
+    {
+      "note": "15年",
+      "input": {
+        "years": 15
+      },
+      "expected": 24
+    },
+    {
+      "note": "0年",
+      "input": {
+        "years": 0
+      },
+      "expected": 0
+    }
+  ]
+}
