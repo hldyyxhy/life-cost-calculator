@@ -16,6 +16,9 @@ import { computeLifeCost } from '../src/calc/lifeCost';
 import { computeFamilySituation, computeRiskIndicators, estimateTargetWage } from '../src/calc/family';
 import { compareCities } from '../src/calc/compare';
 import { checkRelief, estimateMedicalCost } from '../src/calc/relief';
+import { defaultProfile, validateProfile, autoMapTier } from '../src/profile';
+import { metricsFrom, renderTxt } from '../src/tracking';
+import { buildFullReport } from '../src/report';
 import { getMinWageForCity, estimateUnemploymentPay, unemployDuration, calcInjuryOneTime, calcInjuryPension, getProvinceInjuryExtra } from '../src/data/rights';
 import { estimateInpatient } from '../src/data/medical';
 import { getDibaoForCity, getTekunForCity } from '../src/data/relief';
@@ -308,6 +311,22 @@ verifyBatch('data_tekun.json', (i) => getTekunForCity(i.city), dataTol);
 verifyBatch('data_inpatient.json', (i) => estimateInpatient(i.city, i.identity, i.cost, i.remote, i.retired), dataTol);
 verifyBatch('data_check_relief.json', (i) => checkRelief(i.city, i.perCapitaIncome, i.familySize, i.asset), dataTol);
 verifyBatch('data_medical_cost.json', (i) => estimateMedicalCost(i.city, i.identity, i.cost, i.remote, i.retired), dataTol);
+
+console.log('\n数据模型层（profile/tracking/report）：');
+verifyBatch('data_profile.json', (i: any) => ('raw' in i ? validateProfile(i.raw) : 'profile' in i ? autoMapTier(i.profile) : defaultProfile()), dataTol);
+verifyBatch('data_metrics.json', (i: any) => metricsFrom(i.profile, i.lastResult), dataTol);
+verifyBatch('data_render.json', (i: any) => renderTxt(i.name, i.snapshots), dataTol);
+{
+  const fx = load('data_report.json');
+  const prof = validateProfile(fx.input.profile);
+  const cur = computeCurrentSituation(fx.input.curInput);
+  const cmp = compareCities(fx.input.cmpInput.wage, fx.input.cmpInput.currentTier, fx.input.cmpInput.targetTier);
+  const m = String(fx.expected).match(/生成时间：(.+)/);
+  const actual = buildFullReport(prof, cur, cmp, fx.input.ms, m ? m[1] : undefined);
+  const e: string[] = [];
+  deepCmp(actual, fx.expected, '', e);
+  report('data_report.json', e);
+}
 
 console.log('\n家庭/双收入（需重建 self_result）：');
 for (const file of ['family_basic.json', 'family_no_partner.json']) {

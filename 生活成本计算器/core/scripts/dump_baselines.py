@@ -31,6 +31,9 @@ import cost_data as D
 import rights_data as RD
 import medical_data as MD
 import relief_data as RLF
+import profile as P
+import tracking as T
+import report as RP
 
 FIX_DIR = CORE_ROOT / "__fixtures__"
 FIX_DIR.mkdir(parents=True, exist_ok=True)
@@ -500,6 +503,60 @@ def build_data_cases():
     ]
 
 
+def build_datamodel_cases():
+    """数据模型层（profile/tracking/report）。"""
+    prof_raw = {"age": 30, "gender": "男", "wage": "6000", "tier": "二线", "city": "台州",
+                "housing": "合租单间", "food": "普通", "has_car": False, "insurance": "在职（单位缴）",
+                "num_children": 1, "child_school": 1, "support_elderly": True,
+                "savings": "50000", "mortgage_monthly": "2000"}
+    prof = P.validate_profile(prof_raw)
+    cur = CE.compute_current_situation(age=30, wage_pretax=6000, tier="二线", housing="合租单间",
+                                       food_level="普通", has_car=False, insurance_mode="在职（单位缴）",
+                                       num_children=1, children_by_age={"中小学（6-18岁）": 1}, support_elderly=True)
+    cmp = CE.compare_cities(6000, "二线", "一线")
+    ms = {"marriage": "结婚（二线）：彩礼+婚礼+婚房首付约 30 万，按你当前结余攒需约 12 年。",
+          "child": "养娃（普惠·二线）：0-18岁约 50 万，几乎耗尽你的结余能力。",
+          "retire": "养老（60岁退休）：按当前结余，60岁前需储备约 80 万。"}
+    prof_metrics = {"age": 30, "wage": "6000", "tier": "二线", "housing": "合租单间",
+                    "food": "普通", "insurance": "在职（单位缴）",
+                    "savings": "50000", "mortgage_monthly": "2000", "car_loan_monthly": ""}
+    snap = {"time": "2026-06-27 20:40", "metrics": {"surplus": 2052, "savings": 50000,
+            "cost_total": 3472, "debt_monthly": 2000, "surplus_rate": 37.1}, "profile": {}}
+    return [
+        {"name": "data_profile", "source": "档案校验/迁移/映射", "batch": True, "cases": [
+            {"note": "默认", "input": {}, "expected": P.default_profile()},
+            {"note": "往返", "input": {"raw": {"age": 25, "wage": "8000", "has_partner": True, "partner_wage": "7000"}},
+             "expected": P.validate_profile({"age": 25, "wage": "8000", "has_partner": True, "partner_wage": "7000"})},
+            {"note": "补全", "input": {"raw": {"age": 25}}, "expected": P.validate_profile({"age": 25})},
+            {"note": "丢弃多余", "input": {"raw": {"age": 25, "nonexistent": 999}},
+             "expected": P.validate_profile({"age": 25, "nonexistent": 999})},
+            {"note": "旧版迁移", "input": {"raw": {"child_age_group": "3岁以下（婴幼儿）", "num_children": 2}},
+             "expected": P.validate_profile({"child_age_group": "3岁以下（婴幼儿）", "num_children": 2})},
+            {"note": "autoMapTier(台州)", "input": {"profile": {"city": "台州", "tier": "三线"}},
+             "expected": P.auto_map_tier({"city": "台州", "tier": "三线"})},
+            {"note": "autoMapTier(未知)", "input": {"profile": {"city": "火星", "tier": "三线"}},
+             "expected": P.auto_map_tier({"city": "火星", "tier": "三线"})},
+        ]},
+        {"name": "data_metrics", "source": "跟踪指标", "batch": True, "cases": [
+            {"note": "带last_result", "input": {"profile": prof_metrics, "lastResult": {"surplus": 2052, "cost_total": 3472, "surplus_rate": 37.1}},
+             "expected": T.metrics_from(prof_metrics, {"surplus": 2052, "cost_total": 3472, "surplus_rate": 37.1})},
+            {"note": "现算", "input": {"profile": prof_metrics}, "expected": T.metrics_from(prof_metrics)},
+        ]},
+        {"name": "data_render", "source": "跟踪文本", "batch": True, "cases": [
+            {"note": "空", "input": {"name": "张三", "snapshots": []}, "expected": T.render_txt("张三", [])},
+            {"note": "有记录", "input": {"name": "张三", "snapshots": [snap]}, "expected": T.render_txt("张三", [snap])},
+        ]},
+        {"name": "data_report", "source": "综合报告(完整)",
+         "input": {"profile": prof_raw,
+                   "curInput": {"age": 30, "wagePretax": 6000, "tier": "二线", "housing": "合租单间",
+                                "foodLevel": "普通", "hasCar": False, "insuranceMode": "在职（单位缴）",
+                                "numChildren": 1, "childrenByAge": {"中小学（6-18岁）": 1}, "supportElderly": True},
+                   "cmpInput": {"wage": 6000, "currentTier": "二线", "targetTier": "一线"},
+                   "ms": ms},
+         "expected": RP.build_full_report(prof, cur, cmp, ms)},
+    ]
+
+
 def main():
     written = []
 
@@ -545,10 +602,15 @@ def main():
         write_fixture(c["name"], c)
         written.append((c["name"], "data", "数据族对拍"))
 
+    # F. 数据模型层（profile/tracking/report）
+    for c in build_datamodel_cases():
+        write_fixture(c["name"], c)
+        written.append((c["name"], "datamodel", "数据模型对拍"))
+
     # 汇总
     print(f"基准 dump 完成 → {FIX_DIR}（共 {len(written)} 个 fixture）\n")
     for name, kind, detail in written:
-        tag = {"situation": "[situation]", "batch": "[batch]  ", "numeric": "[numeric] ", "prompt": "[prompt]   ", "data": "[data]    "}[kind]
+        tag = {"situation": "[situation]", "batch": "[batch]  ", "numeric": "[numeric] ", "prompt": "[prompt]   ", "data": "[data]    ", "datamodel": "[datamodel]"}[kind]
         print(f"  {tag} {name}: {detail}")
 
 

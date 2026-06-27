@@ -1,0 +1,229 @@
+{
+  "name": "data_profile",
+  "source": "档案校验/迁移/映射",
+  "batch": true,
+  "cases": [
+    {
+      "note": "默认",
+      "input": {},
+      "expected": {
+        "name": "",
+        "age": 30,
+        "gender": "男",
+        "city": "",
+        "tier": "三线",
+        "health": "健康（无慢性病）",
+        "wage": "",
+        "insurance": "在职（单位缴）",
+        "has_side_income": false,
+        "side_income": "",
+        "housing": "合租单间",
+        "food": "普通",
+        "has_car": false,
+        "support_family": "",
+        "has_partner": false,
+        "partner_wage": "",
+        "partner_insurance": "在职（单位缴）",
+        "num_children": 0,
+        "child_baby": 0,
+        "child_kg": 0,
+        "child_school": 0,
+        "child_uni": 0,
+        "support_elderly": false,
+        "has_housing_deduction": false,
+        "has_continuing_education": false,
+        "mortgage_monthly": "",
+        "car_loan_monthly": "",
+        "savings": "",
+        "social_expense": ""
+      }
+    },
+    {
+      "note": "往返",
+      "input": {
+        "raw": {
+          "age": 25,
+          "wage": "8000",
+          "has_partner": true,
+          "partner_wage": "7000"
+        }
+      },
+      "expected": {
+        "name": "",
+        "age": 25,
+        "gender": "男",
+        "city": "",
+        "tier": "三线",
+        "health": "健康（无慢性病）",
+        "wage": "8000",
+        "insurance": "在职（单位缴）",
+        "has_side_income": false,
+        "side_income": "",
+        "housing": "合租单间",
+        "food": "普通",
+        "has_car": false,
+        "support_family": "",
+        "has_partner": true,
+        "partner_wage": "7000",
+        "partner_insurance": "在职（单位缴）",
+        "num_children": 0,
+        "child_baby": 0,
+        "child_kg": 0,
+        "child_school": 0,
+        "child_uni": 0,
+        "support_elderly": false,
+        "has_housing_deduction": false,
+        "has_continuing_education": false,
+        "mortgage_monthly": "",
+        "car_loan_monthly": "",
+        "savings": "",
+        "social_expense": ""
+      }
+    },
+    {
+      "note": "补全",
+      "input": {
+        "raw": {
+          "age": 25
+        }
+      },
+      "expected": {
+        "name": "",
+        "age": 25,
+        "gender": "男",
+        "city": "",
+        "tier": "三线",
+        "health": "健康（无慢性病）",
+        "wage": "",
+        "insurance": "在职（单位缴）",
+        "has_side_income": false,
+        "side_income": "",
+        "housing": "合租单间",
+        "food": "普通",
+        "has_car": false,
+        "support_family": "",
+        "has_partner": false,
+        "partner_wage": "",
+        "partner_insurance": "在职（单位缴）",
+        "num_children": 0,
+        "child_baby": 0,
+        "child_kg": 0,
+        "child_school": 0,
+        "child_uni": 0,
+        "support_elderly": false,
+        "has_housing_deduction": false,
+        "has_continuing_education": false,
+        "mortgage_monthly": "",
+        "car_loan_monthly": "",
+        "savings": "",
+        "social_expense": ""
+      }
+    },
+    {
+      "note": "丢弃多余",
+      "input": {
+        "raw": {
+          "age": 25,
+          "nonexistent": 999
+        }
+      },
+      "expected": {
+        "name": "",
+        "age": 25,
+        "gender": "男",
+        "city": "",
+        "tier": "三线",
+        "health": "健康（无慢性病）",
+        "wage": "",
+        "insurance": "在职（单位缴）",
+        "has_side_income": false,
+        "side_income": "",
+        "housing": "合租单间",
+        "food": "普通",
+        "has_car": false,
+        "support_family": "",
+        "has_partner": false,
+        "partner_wage": "",
+        "partner_insurance": "在职（单位缴）",
+        "num_children": 0,
+        "child_baby": 0,
+        "child_kg": 0,
+        "child_school": 0,
+        "child_uni": 0,
+        "support_elderly": false,
+        "has_housing_deduction": false,
+        "has_continuing_education": false,
+        "mortgage_monthly": "",
+        "car_loan_monthly": "",
+        "savings": "",
+        "social_expense": ""
+      }
+    },
+    {
+      "note": "旧版迁移",
+      "input": {
+        "raw": {
+          "child_age_group": "3岁以下（婴幼儿）",
+          "num_children": 2
+        }
+      },
+      "expected": {
+        "name": "",
+        "age": 30,
+        "gender": "男",
+        "city": "",
+        "tier": "三线",
+        "health": "健康（无慢性病）",
+        "wage": "",
+        "insurance": "在职（单位缴）",
+        "has_side_income": false,
+        "side_income": "",
+        "housing": "合租单间",
+        "food": "普通",
+        "has_car": false,
+        "support_family": "",
+        "has_partner": false,
+        "partner_wage": "",
+        "partner_insurance": "在职（单位缴）",
+        "num_children": 2,
+        "child_baby": 2,
+        "child_kg": 0,
+        "child_school": 0,
+        "child_uni": 0,
+        "support_elderly": false,
+        "has_housing_deduction": false,
+        "has_continuing_education": false,
+        "mortgage_monthly": "",
+        "car_loan_monthly": "",
+        "savings": "",
+        "social_expense": ""
+      }
+    },
+    {
+      "note": "autoMapTier(台州)",
+      "input": {
+        "profile": {
+          "city": "台州",
+          "tier": "三线"
+        }
+      },
+      "expected": {
+        "city": "台州",
+        "tier": "二线"
+      }
+    },
+    {
+      "note": "autoMapTier(未知)",
+      "input": {
+        "profile": {
+          "city": "火星",
+          "tier": "三线"
+        }
+      },
+      "expected": {
+        "city": "火星",
+        "tier": "三线"
+      }
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "name": "data_metrics",
+  "source": "跟踪指标",
+  "batch": true,
+  "cases": [
+    {
+      "note": "带last_result",
+      "input": {
+        "profile": {
+          "age": 30,
+          "wage": "6000",
+          "tier": "二线",
+          "housing": "合租单间",
+          "food": "普通",
+          "insurance": "在职（单位缴）",
+          "savings": "50000",
+          "mortgage_monthly": "2000",
+          "car_loan_monthly": ""
+        },
+        "lastResult": {
+          "surplus": 2052,
+          "cost_total": 3472,
+          "surplus_rate": 37.1
+        }
+      },
+      "expected": {
+        "surplus": 2052,
+        "savings": 50000,
+        "cost_total": 3472,
+        "debt_monthly": 2000,
+        "surplus_rate": 37.1
+      }
+    },
+    {
+      "note": "现算",
+      "input": {
+        "profile": {
+          "age": 30,
+          "wage": "6000",
+          "tier": "二线",
+          "housing": "合租单间",
+          "food": "普通",
+          "insurance": "在职（单位缴）",
+          "savings": "50000",
+          "mortgage_monthly": "2000",
+          "car_loan_monthly": ""
+        }
+      },
+      "expected": {
+        "surplus": 2052,
+        "savings": 50000,
+        "cost_total": 3472,
+        "debt_monthly": 2000,
+        "surplus_rate": 37.1
+      }
+    }
+  ]
+}

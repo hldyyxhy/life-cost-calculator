@@ -42,6 +42,15 @@ export {
   calcPersonalIncomeTax, calcAnnualIncomeTax, bonusMonthlyRate,
 } from './data/cost';
 
+// —— 数据模型（profile/tracking/report）——
+export {
+  FIELD_DEFS, GROUP_TITLES, WIZARD_STEPS,
+  defaultProfile, autoMapTier, validateProfile,
+  profileToJson, profileFromJson, saveLastProfile, loadLastProfile,
+} from './profile';
+export { metricsFrom, renderTxt, safeName, toNum } from './tracking';
+export { buildFullReport, fmtNow } from './report';
+
 // —— 类型 ——
 export type {
   Tier, InsuranceMode, FoodLevel, HousingMode, ChildSeg,
