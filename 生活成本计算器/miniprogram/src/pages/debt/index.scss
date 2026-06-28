@@ -65,6 +65,17 @@
     border: none;
   }
 }
+.btn-ask {
+  margin-top: 16px;
+  background: transparent;
+  color: $color-primary;
+  border: 1px solid $color-primary;
+  border-radius: 48px;
+  font-size: 28px;
+  &::after {
+    border: none;
+  }
+}
 .result-box {
   margin-top: 24px;
 }

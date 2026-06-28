@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Picker, Switch, Button } from '@tarojs/components';
-import { computeLifeCost } from '../../core';
+import { computeLifeCost, buildMilestonesPrompt } from '../../core';
+import PromptCard from '../../components/PromptCard';
 import './index.scss';
 
 const fmtNum = (n: number): string => {
@@ -19,10 +20,10 @@ export default function MilestonesPage() {
   const [careIdx, setCareIdx] = useState(0);
   const [graduate, setGraduate] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [prompt, setPrompt] = useState('');
 
-  const onCompute = () => {
-    setResult(computeLifeCost(TIERS[tierIdx], LEVELS[levelIdx], BIRTH[birthIdx], CARE[careIdx], '公办', graduate));
-  };
+  const onCompute = () => { setResult(computeLifeCost(TIERS[tierIdx], LEVELS[levelIdx], BIRTH[birthIdx], CARE[careIdx], '公办', graduate)); setPrompt(''); };
+  const onAskAi = () => setPrompt(buildMilestonesPrompt(TIERS[tierIdx], 0));
 
   return (
     <View className="page">
@@ -37,6 +38,7 @@ export default function MilestonesPage() {
         <View className="input-row"><Text className="label">养老方式</Text><Picker mode="selector" range={CARE} value={careIdx} onChange={(e) => setCareIdx(Number(e.detail.value))}><View className="picker">{CARE[careIdx]}</View></Picker></View>
         <View className="input-row"><Text className="label">读研(22-23岁)</Text><Switch checked={graduate} onChange={(e) => setGraduate(e.detail.value)} color="#e8843c" /></View>
         <Button className="btn-primary" onClick={onCompute}>算一生成本</Button>
+        <Button className="btn-ask" onClick={onAskAi}>问 AI：三座山怎么攒</Button>
       </View>
 
       {result && (
@@ -54,6 +56,7 @@ export default function MilestonesPage() {
               </View>
             ))}
           </View>
+          <PromptCard prompt={prompt} />
         </View>
       )}
     </View>

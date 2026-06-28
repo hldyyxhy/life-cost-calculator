@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Input, Picker, Switch, Button } from '@tarojs/components';
-import { estimateInpatient } from '../../core';
+import { estimateInpatient, buildMedicalPrompt } from '../../core';
+import PromptCard from '../../components/PromptCard';
 import './index.scss';
 
 const fmtNum = (n: number): string => {
@@ -18,6 +19,7 @@ export default function MedicalPage() {
   const [remoteIdx, setRemoteIdx] = useState(0);
   const [retired, setRetired] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [prompt, setPrompt] = useState('');
 
   return (
     <View className="page">
@@ -31,7 +33,8 @@ export default function MedicalPage() {
         <View className="input-row"><Text className="label">住院费用</Text><Input className="input" type="digit" value={cost} onInput={(e) => setCost(e.detail.value)} /><Text className="unit">元</Text></View>
         <View className="input-row"><Text className="label">就医方式</Text><Picker mode="selector" range={REMOTE} value={remoteIdx} onChange={(e) => setRemoteIdx(Number(e.detail.value))}><View className="picker">{REMOTE[remoteIdx]}</View></Picker></View>
         <View className="input-row"><Text className="label">是否退休</Text><Switch checked={retired} onChange={(e) => setRetired(e.detail.value)} color="#e8843c" /></View>
-        <Button className="btn-primary" onClick={() => setResult(estimateInpatient(city, IDENTITY[idIdx], Number(cost) || 0, REMOTE_KEY[remoteIdx], retired))}>估算报销</Button>
+        <Button className="btn-primary" onClick={() => { setResult(estimateInpatient(city, IDENTITY[idIdx], Number(cost) || 0, REMOTE_KEY[remoteIdx], retired)); setPrompt(''); }}>估算报销</Button>
+        <Button className="btn-ask" onClick={() => setPrompt(buildMedicalPrompt(city, IDENTITY[idIdx], Number(cost) || 0, retired, REMOTE_KEY[remoteIdx]))}>问 AI：医保怎么办最省</Button>
       </View>
 
       {result && !result.error && (
@@ -42,6 +45,7 @@ export default function MedicalPage() {
             <Text className="grand-sub">报销比 {(result.rate * 100).toFixed(0)}%　个人自付 {fmtNum(result.self_pay)} 元</Text>
           </View>
           <View className="card"><Text className="note">{result.note}</Text></View>
+          <PromptCard prompt={prompt} />
         </View>
       )}
       {result && result.error && <View className="card"><Text className="note bad">{result.error}</Text></View>}

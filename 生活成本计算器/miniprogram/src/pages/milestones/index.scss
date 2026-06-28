@@ -11,6 +11,8 @@
   .picker { flex: 1; font-size: 30px; color: $color-text; text-align: right; } }
 .btn-primary { margin-top: 28px; background: $color-primary; color: #fff; border-radius: 48px; font-size: 32px; border: none;
   &::after { border: none; } }
+.btn-ask { margin-top: 16px; background: transparent; color: $color-primary; border: 1px solid $color-primary; border-radius: 48px; font-size: 28px;
+  &::after { border: none; } }
 .result { margin-top: 8px; }
 .grand { text-align: center; padding: 44px 28px;
   .grand-label { display: block; color: $color-text-muted; font-size: 26px; margin-bottom: 12px; }

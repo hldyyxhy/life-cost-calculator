@@ -53,7 +53,7 @@ export default function ProfilePage() {
       );
     }
     if (f.ctype === 'spin') {
-      const [mn, mx] = f.meta as [number, number];
+      const [mn] = f.meta as [number, number];
       return (
         <View className="field-row" key={f.key}>
           <Text className="field-label">{f.label}</Text>
@@ -62,17 +62,34 @@ export default function ProfilePage() {
             type="number"
             value={String(val)}
             onInput={(e) => {
-              const n = Number(e.detail.value);
-              setField(f.key, isNaN(n) ? mn : Math.max(mn, Math.min(mx, n)));
+              // 不钳范围，允许自由输入中间过程（如先输 3 再输 0 得 30）
+              const v = e.detail.value;
+              if (v === '') { setField(f.key, ''); return; }
+              const n = Number(v);
+              setField(f.key, isNaN(n) ? mn : n);
             }}
           />
         </View>
       );
     }
+    // entry（城市字段额外显示匹配提示）
+    const cityTier = f.key === 'city' && val ? autoMapTier({ city: String(val).trim(), tier: '' }).tier : '';
     return (
-      <View className="field-row" key={f.key}>
-        <Text className="field-label">{f.label}</Text>
-        <Input className="input" value={String(val ?? '')} placeholder={String(f.meta || '')} onInput={(e) => setField(f.key, e.detail.value)} />
+      <View className="field-row entry-col" key={f.key}>
+        <View className="entry-main">
+          <Text className="field-label">{f.label}</Text>
+          <Input
+            className="input"
+            value={String(val ?? '')}
+            placeholder={String(f.meta || '')}
+            onInput={(e) => setField(f.key, e.detail.value)}
+          />
+        </View>
+        {f.key === 'city' && val && (
+          <Text className={`city-hint ${cityTier ? 'ok' : 'no'}`}>
+            {cityTier ? `✓ 已匹配：${cityTier}` : '未识别，请填标准城市名（如 北京/成都/台州）'}
+          </Text>
+        )}
       </View>
     );
   };

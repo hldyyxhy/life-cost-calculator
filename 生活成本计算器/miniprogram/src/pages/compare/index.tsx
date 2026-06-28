@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Input, Picker, Button } from '@tarojs/components';
-import { compareCities } from '../../core';
+import { compareCities, buildComparePrompt } from '../../core';
+import PromptCard from '../../components/PromptCard';
 import './index.scss';
 
 const fmtNum = (n: number): string => {
@@ -14,11 +15,10 @@ export default function ComparePage() {
   const [curIdx, setCurIdx] = useState(2);
   const [tgtIdx, setTgtIdx] = useState(0);
   const [result, setResult] = useState<any>(null);
+  const [prompt, setPrompt] = useState('');
 
-  const onCompare = () => {
-    setResult(compareCities(Number(wage) || 0, TIERS[curIdx], TIERS[tgtIdx]));
-  };
-
+  const onCompare = () => { setResult(compareCities(Number(wage) || 0, TIERS[curIdx], TIERS[tgtIdx])); setPrompt(''); };
+  const onAskAi = () => setPrompt(buildComparePrompt(TIERS[curIdx], TIERS[tgtIdx], Number(wage) || 0));
   const diffPositive = !!result && result.surplus_diff > 0;
 
   return (
@@ -32,6 +32,7 @@ export default function ComparePage() {
         <View className="input-row"><Text className="label">当前城市</Text><Picker mode="selector" range={TIERS} value={curIdx} onChange={(e) => setCurIdx(Number(e.detail.value))}><View className="picker">{TIERS[curIdx]}</View></Picker></View>
         <View className="input-row"><Text className="label">目标城市</Text><Picker mode="selector" range={TIERS} value={tgtIdx} onChange={(e) => setTgtIdx(Number(e.detail.value))}><View className="picker">{TIERS[tgtIdx]}</View></Picker></View>
         <Button className="btn-primary" onClick={onCompare}>开始对比</Button>
+        <Button className="btn-ask" onClick={onAskAi}>问 AI：具体两城怎么选</Button>
       </View>
 
       {result && !result.error && (
@@ -59,6 +60,7 @@ export default function ComparePage() {
               <Text className="cmp-row">结余 {fmtNum(result.target.surplus)}</Text>
             </View>
           </View>
+          <PromptCard prompt={prompt} />
         </View>
       )}
     </View>
