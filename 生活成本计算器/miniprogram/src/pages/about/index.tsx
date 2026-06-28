@@ -2,11 +2,10 @@ import { View, Text } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import './index.scss';
 
-// 全部工具入口（core 功能全覆盖）
+// 工具箱：tabBar 放不下的功能（对齐 Python 导航 6-10 项）
 const TOOLS = [
-  { title: '劳动权益', desc: '加班费反算 / 最低工资 / 维权评估', path: '/pages/rights/index' },
-  { title: '城市加减法', desc: '换城市值不值', path: '/pages/compare/index' },
-  { title: '人生三座山', desc: '一生成本（结婚/养娃/养老）', path: '/pages/milestones/index' },
+  { title: '借贷真相', desc: '真实年化反算 / 可承受负债', path: '/pages/debt/index' },
+  { title: '劳动权益', desc: '加班费 / 最低工资 / 维权', path: '/pages/rights/index' },
   { title: '求助与反诈', desc: '出事找谁 / 识破骗局', path: '/pages/help/index' },
   { title: '医保就医', desc: '住院报销估算', path: '/pages/medical/index' },
   { title: '长期跟踪', desc: '结余变化趋势', path: '/pages/tracking/index' },

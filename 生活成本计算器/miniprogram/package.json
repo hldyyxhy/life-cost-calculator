@@ -4,7 +4,7 @@
   "private": true,
   "description": "生活成本计算器小程序（Taro4 + React + TS，复用 core）",
   "scripts": {
-    "build:weapp": "taro build --type weapp",
+    "build:weapp": "taro build --type weapp && node scripts/post-build.js",
     "dev:weapp": "taro build --type weapp --watch",
     "build:h5": "taro build --type h5",
     "dev:h5": "taro build --type h5 --watch"

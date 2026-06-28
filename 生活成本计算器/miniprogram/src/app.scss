@@ -1,9 +1,15 @@
-@import './styles/vars.scss';
+// 全局基础样式（不 @import vars，色值直接写，避免 Taro app-origin.wxss bug）
+// box-sizing: border-box 是关键——小程序 view 默认 content-box，
+// padding 会叠加到 100% 宽度上导致内容溢出右边界（半个文字超出）
+view, text, scroll-view, input, textarea, button, picker, image {
+  box-sizing: border-box;
+}
 
 page {
-  background-color: $color-primary-bg;
-  color: $color-text;
+  background-color: #faf4ec;
+  color: #3d2e1f;
   font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', Helvetica, sans-serif;
   font-size: 28px;
   line-height: 1.6;
+  word-break: break-word;
 }

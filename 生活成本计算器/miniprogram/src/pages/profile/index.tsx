@@ -1,24 +1,31 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { View, Text, Input, Picker, Switch, Button } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import { FIELD_DEFS, GROUP_TITLES, defaultProfile, validateProfile, autoMapTier, saveLastProfile, loadLastProfile } from '../../core';
 import { taroStorage } from '../../utils/storage';
+import WizardModal from '../../components/WizardModal';
 import './index.scss';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(() => loadLastProfile(taroStorage) || defaultProfile());
+  const [showWizard, setShowWizard] = useState(false);
+  const hasChecked = useRef(false);
 
   useDidShow(() => {
     const p = loadLastProfile(taroStorage);
-    if (p) setProfile(p);
+    if (p) {
+      setProfile(p);
+    } else if (!hasChecked.current) {
+      // 首次启动（无档案）→ 弹分步向导，避免面对一长页表单
+      setShowWizard(true);
+    }
+    hasChecked.current = true;
   });
 
   const setField = (key: string, val: any) => {
     setProfile((p: any) => {
       const np = { ...p, [key]: val };
-      if (key === 'city') {
-        np.tier = autoMapTier({ ...np }).tier ?? np.tier;
-      }
+      if (key === 'city') np.tier = autoMapTier({ ...np }).tier ?? np.tier;
       return np;
     });
   };
@@ -28,6 +35,13 @@ export default function ProfilePage() {
     autoMapTier(valid);
     saveLastProfile(taroStorage, valid);
     Taro.showToast({ title: '已保存', icon: 'success' });
+  };
+
+  const onWizardComplete = (prof: any) => {
+    saveLastProfile(taroStorage, prof);
+    setProfile(prof);
+    setShowWizard(false);
+    Taro.showToast({ title: '档案已创建', icon: 'success' });
   };
 
   const renderField = (f: any) => {
@@ -62,7 +76,6 @@ export default function ProfilePage() {
             type="number"
             value={String(val)}
             onInput={(e) => {
-              // 不钳范围，允许自由输入中间过程（如先输 3 再输 0 得 30）
               const v = e.detail.value;
               if (v === '') { setField(f.key, ''); return; }
               const n = Number(v);
@@ -72,18 +85,12 @@ export default function ProfilePage() {
         </View>
       );
     }
-    // entry（城市字段额外显示匹配提示）
     const cityTier = f.key === 'city' && val ? autoMapTier({ city: String(val).trim(), tier: '' }).tier : '';
     return (
       <View className="field-row entry-col" key={f.key}>
         <View className="entry-main">
           <Text className="field-label">{f.label}</Text>
-          <Input
-            className="input"
-            value={String(val ?? '')}
-            placeholder={String(f.meta || '')}
-            onInput={(e) => setField(f.key, e.detail.value)}
-          />
+          <Input className="input" value={String(val ?? '')} placeholder={String(f.meta || '')} onInput={(e) => setField(f.key, e.detail.value)} />
         </View>
         {f.key === 'city' && val && (
           <Text className={`city-hint ${cityTier ? 'ok' : 'no'}`}>
@@ -104,6 +111,9 @@ export default function ProfilePage() {
       ))}
       <Button className="btn-primary" onClick={onSave}>保存档案</Button>
       <View className="hint">填一次档案，各计算页都会自动带入了。城市等级按城市名自动匹配。</View>
+
+      {/* 首次启动向导 */}
+      {showWizard && <WizardModal onComplete={onWizardComplete} />}
     </View>
   );
 }

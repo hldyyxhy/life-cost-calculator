@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Input, Picker, Switch, Button } from '@tarojs/components';
+import { View, Text, Input, Picker, Switch, Button, ScrollView } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import { computeCurrentSituation, loadLastProfile, buildCurrentSituationPrompt } from '../../core';
 import { taroStorage } from '../../utils/storage';
@@ -27,6 +27,10 @@ export default function SituationPage() {
   const [insIdx, setInsIdx] = useState(0);
   const [result, setResult] = useState<any>(null);
   const [prompt, setPrompt] = useState('');
+  const [overrides, setOverrides] = useState<any>(null);
+  // overrides 弹窗
+  const [showOv, setShowOv] = useState(false);
+  const [ovVals, setOvVals] = useState<Record<string, string>>({});
 
   useDidShow(() => {
     const p = loadLastProfile(taroStorage);
@@ -41,13 +45,13 @@ export default function SituationPage() {
     }
   });
 
-  const onCompute = () => {
-    setResult(computeCurrentSituation({
-      age: Number(age) || 30, wagePretax: Number(wage) || 0, tier: TIERS[tierIdx],
-      housing: HOUSINGS[housingIdx], foodLevel: FOODS[foodIdx], hasCar, insuranceMode: INSURANCES[insIdx],
-    }));
-    setPrompt('');
-  };
+  const buildInput = () => ({
+    age: Number(age) || 30, wagePretax: Number(wage) || 0, tier: TIERS[tierIdx],
+    housing: HOUSINGS[housingIdx], foodLevel: FOODS[foodIdx], hasCar,
+    insuranceMode: INSURANCES[insIdx], overrides: overrides ?? undefined,
+  });
+
+  const onCompute = () => { setResult(computeCurrentSituation(buildInput())); setPrompt(''); };
 
   const onAskAi = () => {
     setPrompt(buildCurrentSituationPrompt(
@@ -56,13 +60,38 @@ export default function SituationPage() {
     ));
   };
 
+  const onOpenOv = () => {
+    if (!result?.breakdown) return;
+    const vals: Record<string, string> = {};
+    Object.entries(result.breakdown).forEach(([k, v]) => { vals[k] = String(v); });
+    setOvVals(vals);
+    setShowOv(true);
+  };
+
+  const onApplyOv = () => {
+    const ov: Record<string, number> = {};
+    Object.entries(ovVals).forEach(([k, v]) => {
+      const n = Number(v);
+      if (!isNaN(n)) ov[k] = n;
+    });
+    setOverrides(ov);
+    setResult(computeCurrentSituation({ ...buildInput(), overrides: ov }));
+    setShowOv(false);
+  };
+
+  const onResetOv = () => {
+    setOverrides(null);
+    setResult(computeCurrentSituation(buildInput()));
+    setShowOv(false);
+  };
+
   const surplusPositive = !!result && result.surplus >= 0;
 
   return (
     <View className="page">
       <View className="header">
         <Text className="header-title">我现在的处境</Text>
-        <Text className="header-link" onClick={() => Taro.switchTab({ url: '/pages/profile/index' })}>我的档案 ›</Text>
+        <Text className="header-link" onClick={() => Taro.switchTab({ url: '/pages/profile/index' })}>档案 ›</Text>
       </View>
 
       <View className="card form">
@@ -90,8 +119,12 @@ export default function SituationPage() {
             <View className="summary-row"><Text className="summary-label">生存成本</Text><Text className="summary-value">{fmtNum(result.cost_total)} 元/月</Text></View>
             <View className="summary-row"><Text className="summary-label">城市生存底线</Text><Text className="summary-value muted">{fmtNum(result.survival_baseline)} 元/月</Text></View>
           </View>
+          {/* 成本构成图 + 按实际改 */}
           <View className="card chart">
-            <View className="chart-title">成本构成</View>
+            <View className="chart-header">
+              <Text className="chart-title">成本构成</Text>
+              <Text className="chart-edit" onClick={onOpenOv}>✏ 按实际改</Text>
+            </View>
             {Object.entries(result.breakdown).map(([cat, amt]: [string, any]) => {
               const pct = result.cost_total > 0 ? (amt / result.cost_total) * 100 : 0;
               return (
@@ -102,6 +135,7 @@ export default function SituationPage() {
                 </View>
               );
             })}
+            {overrides && <Text className="ov-note" onClick={onResetOv}>（显示的是你改过的实际值，点此恢复估算）</Text>}
           </View>
           <View className="card detail">
             <View className="detail-title">成本明细</View>
@@ -111,6 +145,28 @@ export default function SituationPage() {
           </View>
           <View className="card interp"><SmartNote text={result.interpretation} /></View>
           <PromptCard prompt={prompt} />
+        </View>
+      )}
+
+      {/* overrides 弹窗 */}
+      {showOv && (
+        <View className="ov-mask" onClick={() => setShowOv(false)}>
+          <View className="ov-modal" catchMove onClick={(e) => e.stopPropagation()}>
+            <View className="ov-title">✏ 按我的实际改</View>
+            <Text className="ov-desc">哪项和你实际差得多就改哪项，改完自动重算结余。</Text>
+            <ScrollView scrollY className="ov-body">
+              {Object.entries(ovVals).map(([k, v]) => (
+                <View className="ov-row" key={k}>
+                  <Text className="ov-label">{k}</Text>
+                  <Input className="ov-input" type="digit" value={v} onInput={(e) => setOvVals({ ...ovVals, [k]: e.detail.value })} />
+                </View>
+              ))}
+            </ScrollView>
+            <View className="ov-actions">
+              <Button className="ov-btn-reset" onClick={onResetOv}>恢复估算</Button>
+              <Button className="ov-btn-apply" onClick={onApplyOv}>确定重算</Button>
+            </View>
+          </View>
         </View>
       )}
     </View>

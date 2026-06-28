@@ -1,4 +1,4 @@
-@import '../../styles/vars.scss';
+@import '../../styles/vars';
 
 .page {
   padding: 24px;
@@ -178,4 +178,23 @@
 
 /* 问 AI 次按钮 */
 .btn-ask { margin-top: 16px; background: transparent; color: $color-primary; border: 1px solid $color-primary; border-radius: 48px; font-size: 28px;
+  &::after { border: none; } }
+
+/* overrides 弹窗 */
+.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+  .chart-title { font-size: 30px; font-weight: 600; color: $color-text; }
+  .chart-edit { font-size: 24px; color: $color-primary; } }
+.ov-note { display: block; text-align: center; font-size: 22px; color: $color-text-muted; margin-top: 12px; }
+.ov-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; display: flex; align-items: center; justify-content: center; }
+.ov-modal { width: 86%; max-height: 75%; background: #fff; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; }
+.ov-title { font-size: 32px; font-weight: 700; color: #3d2e1f; padding: 28px 24px 8px; }
+.ov-desc { font-size: 24px; color: #9a8b7a; padding: 0 24px 16px; }
+.ov-body { padding: 8px 24px; max-height: 500px; }
+.ov-row { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; border-bottom: 1px solid #f0e6d8;
+  .ov-label { font-size: 28px; color: #3d2e1f; }
+  .ov-input { width: 200px; font-size: 30px; text-align: right; color: #e8843c; } }
+.ov-actions { display: flex; gap: 16px; padding: 16px 24px 24px; }
+.ov-btn-reset { flex: 1; background: transparent; color: #9a8b7a; border: 1px solid #f0e6d8; border-radius: 40px; font-size: 28px;
+  &::after { border: none; } }
+.ov-btn-apply { flex: 2; background: #e8843c; color: #fff; border-radius: 40px; font-size: 30px; border: none;
   &::after { border: none; } }

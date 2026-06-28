@@ -1,7 +1,10 @@
-@import '../styles/vars.scss';
-
-.prompt-card { margin-top: 24px; padding: 24px; background: rgba(232,132,60,0.06); border-radius: 16px; border: 1px solid $color-border;
-  .pc-title { font-size: 26px; font-weight: 600; color: $color-primary; margin-bottom: 12px; }
-  .pc-text { display: block; font-size: 24px; color: $color-text; line-height: 1.7; }
-  .pc-btn { margin-top: 20px; background: $color-primary; color: #fff; border-radius: 40px; font-size: 28px; border: none;
-    &::after { border: none; } } }
+.pm-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; display: flex; align-items: center; justify-content: center; }
+.pm-modal { width: 86%; max-height: 70%; background: #fff; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; }
+.pm-header { display: flex; justify-content: space-between; align-items: center; padding: 24px; border-bottom: 1px solid #f0e6d8; }
+.pm-title { font-size: 30px; font-weight: 600; color: #3d2e1f; }
+.pm-close { font-size: 36px; color: #9a8b7a; padding: 0 8px; line-height: 1; }
+.pm-body { padding: 24px; max-height: 600px; }
+.pm-text { font-size: 24px; color: #3d2e1f; line-height: 1.7; }
+.pm-actions { padding: 16px 24px 24px; }
+.pm-btn-copy { background: #e8843c; color: #fff; border-radius: 40px; font-size: 28px; border: none;
+  &::after { border: none; } }

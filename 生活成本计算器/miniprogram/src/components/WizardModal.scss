@@ -1,0 +1,34 @@
+@import '../styles/vars';
+
+.wz-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #faf4ec; z-index: 1000; display: flex; flex-direction: column; }
+
+.wz-modal { flex: 1; display: flex; flex-direction: column; padding: 60px 40px 40px; }
+
+/* 进度条 */
+.wz-progress-bar { display: flex; gap: 12px; margin-bottom: 40px; }
+.wz-dot { flex: 1; height: 8px; background: $color-border; border-radius: 4px; transition: background 0.3s;
+  &.active { background: $color-primary; } }
+
+/* 头部 */
+.wz-header { margin-bottom: 32px; }
+.wz-step-num { display: block; font-size: 24px; color: $color-text-muted; margin-bottom: 8px; }
+.wz-step-title { display: block; font-size: 40px; font-weight: 700; color: $color-text; }
+
+/* 表单字段 */
+.wz-body { flex: 1; }
+.wz-field { display: flex; align-items: center; justify-content: space-between; padding: 24px 0; border-bottom: 1px solid $color-border; }
+.wz-entry { flex-direction: column; align-items: stretch; }
+.wz-label { font-size: 30px; color: $color-text; }
+.wz-input { font-size: 32px; color: $color-text; text-align: right; flex: 1; margin-left: 24px; }
+.wz-entry .wz-input { text-align: left; margin-left: 0; margin-top: 12px; padding: 16px; background: #fff; border-radius: 12px; border: 1px solid $color-border; }
+.wz-picker { font-size: 32px; color: $color-primary; }
+.wz-city-hint { font-size: 22px; margin-top: 8px;
+  &.ok { color: $color-good; } &.no { color: $color-warn; } }
+.wz-skip { display: block; text-align: center; color: $color-text-muted; font-size: 26px; padding: 60px 0; }
+
+/* 按钮 */
+.wz-actions { display: flex; gap: 16px; padding-top: 24px; }
+.wz-btn-prev { flex: 1; background: transparent; color: $color-text-muted; border: 1px solid $color-border; border-radius: 48px; font-size: 30px;
+  &::after { border: none; } }
+.wz-btn-next { flex: 2; background: $color-primary; color: #fff; border-radius: 48px; font-size: 32px; border: none;
+  &::after { border: none; } }
