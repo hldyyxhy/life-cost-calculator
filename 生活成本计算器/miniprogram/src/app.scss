@@ -1,0 +1,9 @@
+@import './styles/vars.scss';
+
+page {
+  background-color: $color-primary-bg;
+  color: $color-text;
+  font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', Helvetica, sans-serif;
+  font-size: 28px;
+  line-height: 1.6;
+}

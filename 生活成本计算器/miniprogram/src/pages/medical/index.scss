@@ -1,0 +1,23 @@
+@import '../../styles/vars.scss';
+
+.page { padding: 24px 24px 48px; }
+.header { display: flex; align-items: center; padding: 8px 4px 20px;
+  .header-title { font-size: 36px; font-weight: 700; color: $color-text; } }
+.card { background: $color-card; border-radius: 20px; padding: 32px 28px; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(232,132,60,0.06); }
+.calc-title { font-size: 32px; font-weight: 600; color: $color-text; margin-bottom: 8px; }
+.calc-desc { font-size: 24px; color: $color-text-muted; line-height: 1.6; margin-bottom: 20px; }
+.input-row { display: flex; align-items: center; padding: 18px 0; border-bottom: 1px solid $color-border;
+  .label { width: 178px; color: $color-text-muted; font-size: 28px; }
+  .input { flex: 1; font-size: 30px; color: $color-text; text-align: right; }
+  .unit { color: $color-text-muted; margin-left: 12px; font-size: 24px; }
+  .picker { flex: 1; font-size: 30px; color: $color-text; text-align: right; } }
+.btn-primary { margin-top: 28px; background: $color-primary; color: #fff; border-radius: 48px; font-size: 32px; border: none;
+  &::after { border: none; } }
+.grand { text-align: center; padding: 40px 28px;
+  .grand-label { display: block; color: $color-text-muted; font-size: 26px; margin-bottom: 12px; }
+  .grand-value { font-size: 60px; font-weight: 700; }
+  .grand-unit { font-size: 28px; font-weight: 400; }
+  .grand-sub { display: block; color: $color-text-muted; font-size: 24px; margin-top: 14px; }
+  .good { color: $color-good; } }
+.note { display: block; font-size: 24px; color: $color-text; line-height: 1.7;
+  &.bad { color: $color-accent; } }

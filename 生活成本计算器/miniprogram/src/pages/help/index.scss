@@ -1,0 +1,16 @@
+@import '../../styles/vars.scss';
+
+.page { padding: 24px 24px 48px; }
+.header { display: flex; align-items: center; padding: 8px 4px 20px;
+  .header-title { font-size: 36px; font-weight: 700; color: $color-text; } }
+.card { background: $color-card; border-radius: 20px; padding: 32px 28px; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(232,132,60,0.06); }
+.section-title { font-size: 32px; font-weight: 600; color: $color-text; margin-bottom: 8px;
+  &.warn-text { color: $color-accent; } }
+.section-desc { font-size: 24px; color: $color-text-muted; line-height: 1.6; margin-bottom: 20px; }
+.wall { display: flex; flex-wrap: wrap; gap: 16px; }
+.wall-btn { padding: 16px 24px; background: rgba(232,132,60,0.1); color: $color-primary; border-radius: 12px; font-size: 26px;
+  &.warn { background: rgba(217,83,79,0.1); color: $color-accent; } }
+.prompt-box { .prompt-title { font-size: 28px; font-weight: 600; color: $color-text; margin-bottom: 16px; }
+  .prompt-text { display: block; font-size: 24px; color: $color-text; line-height: 1.7; background: $color-primary-bg; padding: 24px; border-radius: 12px; margin-bottom: 20px; } }
+.btn-primary { background: $color-primary; color: #fff; border-radius: 48px; font-size: 32px; border: none;
+  &::after { border: none; } }

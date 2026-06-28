@@ -1,0 +1,41 @@
+{
+  "name": "shenghuo-miniprogram",
+  "version": "1.0.0",
+  "private": true,
+  "description": "生活成本计算器小程序（Taro4 + React + TS，复用 core）",
+  "scripts": {
+    "build:weapp": "taro build --type weapp",
+    "dev:weapp": "taro build --type weapp --watch",
+    "build:h5": "taro build --type h5",
+    "dev:h5": "taro build --type h5 --watch"
+  },
+  "browserslist": [
+    "last 3 versions",
+    "Android >= 4.1",
+    "iOS >= 8"
+  ],
+  "dependencies": {
+    "@tarojs/components": "4.2.0",
+    "@tarojs/helper": "4.2.0",
+    "@tarojs/plugin-framework-react": "4.2.0",
+    "@tarojs/plugin-platform-weapp": "4.2.0",
+    "@tarojs/react": "^4.2.0",
+    "@tarojs/runtime": "4.2.0",
+    "@tarojs/shared": "4.2.0",
+    "@tarojs/taro": "4.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.0",
+    "@babel/preset-react": "^8.0.1",
+    "@tarojs/cli": "4.2.0",
+    "@tarojs/webpack5-runner": "4.2.0",
+    "@types/react": "^18.3.0",
+    "babel-preset-taro": "4.2.0",
+    "react-refresh": "^0.14.0",
+    "sass": "^1.77.0",
+    "typescript": "^5.5.0",
+    "webpack": "5.91.0"
+  }
+}

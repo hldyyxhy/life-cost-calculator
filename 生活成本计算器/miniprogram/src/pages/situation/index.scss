@@ -1,0 +1,169 @@
+@import '../../styles/vars.scss';
+
+.page {
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px 20px;
+  .header-title {
+    font-size: 36px;
+    font-weight: 700;
+    color: $color-text;
+  }
+  .header-link {
+    font-size: 26px;
+    color: $color-primary;
+  }
+}
+
+.card {
+  background: $color-card;
+  border-radius: 20px;
+  padding: 32px 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(232, 132, 60, 0.06);
+}
+
+/* 表单 */
+.form {
+  .form-title {
+    font-size: 34px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: $color-text;
+  }
+  .form-row {
+    display: flex;
+    align-items: center;
+    padding: 22px 0;
+    border-bottom: 1px solid $color-border;
+    .label {
+      width: 168px;
+      color: $color-text-muted;
+      font-size: 28px;
+    }
+    .input {
+      flex: 1;
+      font-size: 30px;
+      color: $color-text;
+    }
+    .unit {
+      color: $color-text-muted;
+      margin-left: 12px;
+    }
+    .picker {
+      flex: 1;
+      font-size: 30px;
+      color: $color-text;
+      text-align: right;
+    }
+  }
+  .btn-primary {
+    margin-top: 36px;
+    background: $color-primary;
+    color: #fff;
+    border-radius: 48px;
+    font-size: 32px;
+    border: none;
+    &::after {
+      border: none;
+    }
+  }
+}
+
+/* 结果 */
+.result {
+  margin-top: 8px;
+}
+
+.surplus {
+  text-align: center;
+  padding: 44px 28px;
+  .surplus-label {
+    display: block;
+    color: $color-text-muted;
+    font-size: 26px;
+    margin-bottom: 12px;
+  }
+  .surplus-value {
+    font-size: 68px;
+    font-weight: 700;
+    display: block;
+    line-height: 1.2;
+  }
+  .surplus-unit {
+    font-size: 28px;
+    font-weight: 400;
+  }
+  .surplus-rate {
+    display: block;
+    color: $color-text-muted;
+    font-size: 26px;
+    margin-top: 14px;
+  }
+  &.pos .surplus-value {
+    color: $color-good;
+  }
+  &.neg .surplus-value {
+    color: $color-accent;
+  }
+}
+
+.summary {
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 0;
+    border-bottom: 1px solid $color-border;
+    &:last-child {
+      border-bottom: none;
+    }
+    .summary-label {
+      color: $color-text-muted;
+    }
+    .summary-value {
+      color: $color-text;
+      font-weight: 500;
+    }
+    .muted {
+      color: $color-text-muted;
+      font-weight: 400;
+    }
+  }
+}
+
+.detail {
+  .detail-title {
+    font-size: 30px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: $color-text;
+  }
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    .detail-item {
+      color: $color-text;
+    }
+    .detail-amount {
+      color: $color-primary;
+      font-weight: 500;
+    }
+  }
+}
+
+.interp {
+  .interp-line {
+    display: block;
+    color: $color-text;
+    font-size: 26px;
+    line-height: 1.8;
+  }
+}

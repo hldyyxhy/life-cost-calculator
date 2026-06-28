@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-06-27 20:54:28",
+  "python_version": "3.13.14",
+  "conventions": {
+    "tuple_to_array": true,
+    "int_key_to_string": true,
+    "none_to_null": true,
+    "inf_to_infinity": "float('inf') 写为 Infinity（非标准 JSON，TS JSON.parse 支持）",
+    "derived_constants": "CITY_TO_TIER/HOUSE_PURCHASE/CITY_NAMES 等导运行时值"
+  },
+  "source_md5": {
+    "cost_data": "f9f2337f29c0159b28117ca93ef8a9b6",
+    "rights_data": "565d25792062168b79771e9aa88c3fbd",
+    "medical_data": "67e17f20696f044b778e2566bf7fa923",
+    "relief_data": "d72e924a4c6b7fc8f7c1c8e1a68399f7"
+  },
+  "constant_counts": {
+    "cost": 37,
+    "rights": 18,
+    "medical": 13,
+    "relief": 15
+  }
+}
