@@ -3,6 +3,7 @@ import { View, Text, Input, Picker, Radio, Button } from '@tarojs/components';
 import { cityFactor, computeLifeCost, computeSurplus, buildMilestonesPrompt } from '../../core';
 import costData from '../../core/data/cost.json';
 import PromptCard from '../../components/PromptCard';
+import SmartNote from '../../components/SmartNote';
 import './index.scss';
 
 const fmtNum = (n: number): string => {
@@ -112,7 +113,7 @@ export default function MilestonesPage() {
             <View className="info-row"><Text className="info-label">婚礼婚宴</Text><Text className="info-val">{fmtNum(marriage.wedding)} 元</Text></View>
             <View className="info-row"><Text className="info-label">{purchase === '全款' ? '婚房（全款）' : '婚房首付'}</Text><Text className="info-val">{fmtNum(marriage.house)} 元</Text></View>
             <View className="big-line">合计 <Text className="rate warn">{fmtNum(marriage.total)}</Text> 元</View>
-            <View className="note">{marriage.years < 0 ? '⚠️ 你目前入不敷出，暂不具备条件。' : marriage.years >= 100 ? '按当前结余几乎不可能攒够。' : `按月结余 ${fmtNum(marriage.ms)} 元，需攒约 ${Math.round(marriage.years)} 年。`}</View>
+            <SmartNote text={marriage.years < 0 ? '⚠️ 你目前入不敷出，暂不具备条件。' : marriage.years >= 100 ? '按当前结余几乎不可能攒够。' : `按月结余 ${fmtNum(marriage.ms)} 元，需攒约 ${Math.round(marriage.years)} 年。`} />
           </View>
         )}
       </View>
@@ -132,12 +133,7 @@ export default function MilestonesPage() {
             <View className="big-line">0-22岁累计 <Text className="rate warn">{fmtNum(child.total)}</Text> 元</View>
             <View className="info-row"><Text className="info-label">年均</Text><Text className="info-val">{fmtNum(child.annual)} 元/年</Text></View>
             <View className="info-row"><Text className="info-label">折合月支出</Text><Text className="info-val">{fmtNum(child.monthly)} 元/月</Text></View>
-            <View className="note">
-              {child.ratio < 0 ? '⚠️ 你目前没有结余，养娃需另找来源。'
-                : child.ratio > 100 ? `⚠️ 占月结余 ${child.ratio.toFixed(0)}%，超过全部结余！`
-                : child.ratio >= 50 ? `⚠️ 占月结余 ${child.ratio.toFixed(0)}%，压力较大。`
-                : `✅ 占月结余 ${child.ratio.toFixed(0)}%，可承受。`}
-            </View>
+            <SmartNote text={child.ratio < 0 ? '⚠️ 你目前没有结余，养娃需另找来源。' : child.ratio > 100 ? `⚠️ 占月结余 ${child.ratio.toFixed(0)}%，超过全部结余！` : child.ratio >= 50 ? `⚠️ 占月结余 ${child.ratio.toFixed(0)}%，压力较大。` : `✅ 占月结余 ${child.ratio.toFixed(0)}%，可承受。`} />
           </View>
         )}
       </View>
@@ -167,7 +163,7 @@ export default function MilestonesPage() {
                 : <Text className="rate bad">每月缺口 {fmtNum(-retire.gap)} 元 ⚠️</Text>}
             </View>
             {retire.gap < 0 && (
-              <View className="note">退休后 {retire.years} 年总缺口约 {fmtNum(retire.totalGap)} 元。现在起每月多存 {fmtNum(-retire.gap)} 元可填补。</View>
+              <SmartNote text={`退休后 ${retire.years} 年总缺口约 ${fmtNum(retire.totalGap)} 元。现在起每月多存 ${fmtNum(-retire.gap)} 元可填补。`} />
             )}
           </View>
         )}

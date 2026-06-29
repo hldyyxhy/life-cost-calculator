@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, Input, Picker, Switch, Button } from '@tarojs/components';
 import { estimateInpatient, buildMedicalPrompt } from '../../core';
 import PromptCard from '../../components/PromptCard';
+import SmartNote from '../../components/SmartNote';
 import './index.scss';
 
 const fmtNum = (n: number): string => {
@@ -44,7 +45,7 @@ export default function MedicalPage() {
             <Text className="grand-value good">{fmtNum(result.total_pay)}<Text className="grand-unit"> 元</Text></Text>
             <Text className="grand-sub">报销比 {(result.rate * 100).toFixed(0)}%　个人自付 {fmtNum(result.self_pay)} 元</Text>
           </View>
-          <View className="card"><Text className="note">{result.note}</Text></View>
+          <View className="card"><SmartNote text={result.note} /></View>
           <PromptCard prompt={prompt} />
         </View>
       )}
