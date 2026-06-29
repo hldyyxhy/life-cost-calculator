@@ -1152,7 +1152,7 @@
   },
   "PARTNER_PERSONAL_MONTHLY": 1300,
   "OTHER_MONTHLY": {
-    "通讯费（手机+宽带）": {
+    "通讯费": {
       "base": 90
     },
     "日用品": {

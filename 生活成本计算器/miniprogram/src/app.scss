@@ -5,6 +5,10 @@ view, text, scroll-view, input, textarea, button, picker, image {
   box-sizing: border-box;
 }
 
+text {
+  word-break: break-all;
+}
+
 page {
   background-color: #faf4ec;
   color: #3d2e1f;

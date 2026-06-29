@@ -1,0 +1,7 @@
+@import '../styles/vars';
+
+.sub-tabs { display: flex; white-space: nowrap; padding: 0 8px; margin-bottom: 16px; width: 100%; }
+.sub-tab { display: inline-block; padding: 14px 28px; margin: 0 6px; border-radius: 24px; background: $color-card; flex-shrink: 0;
+  &.active { background: $color-primary; }
+  .sub-tab-text { font-size: 26px; color: $color-text-muted; } }
+.sub-tab.active .sub-tab-text { color: #fff; }

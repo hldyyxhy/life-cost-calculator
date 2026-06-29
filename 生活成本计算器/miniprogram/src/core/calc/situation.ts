@@ -57,7 +57,7 @@ export function computeCurrentSituation(input: SituationInput): SituationResult 
     const house_cost = HOUSE_PURCHASE[tier].monthly_loan;
     add_cost('住房（房贷月供）', house_cost, '90㎡贷款70%、30年、约3.05%利率估算', '住房');
     utility = HOUSING['含水电物业网费'].base * cf;
-  } else if (housing === '与父母同住（免租）') {
+  } else if (housing === '免租') {
     add_cost('住房（与父母同住）', 0, '免房租；水电与父母分摊', '住房');
     utility = HOUSING['含水电物业网费'].base * cf * 0.5; // 水电减半
   } else {

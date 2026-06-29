@@ -2,7 +2,7 @@
   "miniprogramRoot": "dist/",
   "projectname": "shenghuo-miniprogram",
   "description": "生活成本计算器",
-  "appid": "wx14c3748d9a47db02",
+  "appid": "wxc88bf73ab465f342",
   "setting": {
     "es6": false,
     "enhance": false,

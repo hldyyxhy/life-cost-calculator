@@ -15,7 +15,7 @@ export type HousingMode =
   | '合租单间'
   | '一居室整租'
   | '已购房（还月供）'
-  | '与父母同住（免租）';
+  | '免租';
 
 /** 子女年龄段（cost_data.CHILD_CARE_MONTHLY_BASE 的键） */
 export type ChildSeg =

@@ -25,7 +25,7 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: 'name', default: '', label: '姓名（可选）', ctype: 'entry', meta: '用于区分多份长期跟踪档案' },
     { key: 'age', default: 30, label: '年龄', ctype: 'spin', meta: [16, 80] },
     { key: 'gender', default: '男', label: '性别', ctype: 'combo', meta: ['男', '女'] },
-    { key: 'city', default: '', label: '所在城市', ctype: 'entry', meta: '如：北京、成都、长沙…输入后自动匹配城市等级' },
+    { key: 'city', default: '', label: '所在城市', ctype: 'entry', meta: '如 北京/成都' },
     { key: 'tier', default: '三线', label: '城市等级', ctype: 'combo', meta: ['一线', '新一线', '二线', '三线', '四线', '五线'] },
     { key: 'health', default: '健康（无慢性病）', label: '健康状况', ctype: 'combo', meta: ['健康（无慢性病）', '有慢性病（需长期用药）', '需定期就医'] },
   ],
@@ -33,10 +33,10 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: 'wage', default: '', label: '本人税前月薪（元）', ctype: 'entry', meta: '留空则用本城市典型月薪' },
     { key: 'insurance', default: '在职（单位缴）', label: '社保类型', ctype: 'combo', meta: ['在职（单位缴）', '灵活就业（全自缴）', '不缴社保'] },
     { key: 'has_side_income', default: false, label: '有副业/兼职收入', ctype: 'check', meta: null },
-    { key: 'side_income', default: '', label: '副业月收入（元）', ctype: 'entry', meta: '已扣除税费后的到手估算' },
+    { key: 'side_income', default: '', label: '副业月收入（元）', ctype: 'entry', meta: '到手估算' },
   ],
   living: [
-    { key: 'housing', default: '合租单间', label: '住房方式', ctype: 'combo', meta: ['合租单间', '一居室整租', '已购房（还月供）', '与父母同住（免租）'] },
+    { key: 'housing', default: '合租单间', label: '住房方式', ctype: 'combo', meta: ['合租单间', '一居室整租', '已购房（还月供）', '免租'] },
     { key: 'food', default: '普通', label: '饮食档次', ctype: 'combo', meta: ['节俭', '普通', '宽裕'] },
     { key: 'has_car', default: false, label: '养车', ctype: 'check', meta: null },
     { key: 'support_family', default: '', label: '给老家生活费（元/月）', ctype: 'entry', meta: '0 或留空表示不给' },
@@ -57,10 +57,10 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: 'has_continuing_education', default: false, label: '本人继续教育（+400元/月）', ctype: 'check', meta: null },
   ],
   finance: [
-    { key: 'mortgage_monthly', default: '', label: '房贷月供（元，另计/非默认）', ctype: 'entry', meta: "若上面选了'已购房'，这里可覆盖默认月供；留空用默认" },
+    { key: 'mortgage_monthly', default: '', label: '房贷月供（元，另计/非默认）', ctype: 'entry', meta: "留空用默认" },
     { key: 'car_loan_monthly', default: '', label: '车贷月供（元）', ctype: 'entry', meta: '0 或留空' },
     { key: 'savings', default: '', label: '现有存款/应急金（元）', ctype: 'entry', meta: '用于估算失业能撑多久' },
-    { key: 'social_expense', default: '', label: '人情/娱乐月支出（元）', ctype: 'entry', meta: '红白喜事、聚餐等，0 或留空' },
+    { key: 'social_expense', default: '', label: '人情/娱乐月支出（元）', ctype: 'entry', meta: '0 或留空' },
   ],
 };
 

@@ -1,10 +1,12 @@
 @import '../styles/vars';
 
-.smart-note { .sn-line { display: block; font-size: 26px; line-height: 1.85; color: $color-text; }
+.smart-note {
+  .sn-line { display: block; font-size: 26px; line-height: 1.85; color: $color-text; }
   .h { color: $color-primary; font-weight: 600; font-size: 28px; margin-top: 8px; }
-  .warn { color: $color-accent; font-size: 24px; }
-  .big { color: $color-good; font-weight: 600; }
-  .bigbad { color: $color-accent; font-weight: 600; }
+  .warn { color: $color-accent; font-size: 28px; font-weight: 600; }
+  .big { color: $color-good; }
+  .bigbad { color: $color-accent; }
   .emph { color: $color-text; font-weight: 600; }
-  .num { font-weight: 700; color: $color-primary; }
-  .bad { color: $color-accent; font-weight: 600; } }
+  .num { font-weight: 600; color: $color-primary; }
+  .bad { color: $color-accent; font-weight: 600; }
+}
