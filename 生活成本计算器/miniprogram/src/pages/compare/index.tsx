@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, Input, Picker, Button } from '@tarojs/components';
+import { View, Text, Input, Picker, Switch, Button } from '@tarojs/components';
 import {
   compareCities, compareBuyRent, housingFundLoan, rateStressTest,
   buildComparePrompt, buildBuyRentPrompt, buildFundPrompt, buildRateStressPrompt,
 } from '../../core';
 import SubTabs from '../../components/SubTabs';
+import SmartNote from '../../components/SmartNote';
 import PromptCard from '../../components/PromptCard';
 import './index.scss';
 
@@ -13,16 +14,32 @@ const fmtNum = (n: number): string => {
   const neg = n < 0;
   return (neg ? '-' : '') + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
+const fmtDiff = (a: number, b: number): string => {
+  const d = b - a;
+  if (d === 0) return '—';
+  return (d > 0 ? '+' : '') + fmtNum(d);
+};
 const TIERS = ['一线', '新一线', '二线', '三线', '四线', '五线'];
+const HOUSINGS = ['合租单间', '一居室整租', '已购房（还月供）', '免租'];
+const FOODS = ['节俭', '普通', '宽裕'];
+const INSURANCES = ['在职（单位缴）', '灵活就业（全自缴）', '不缴社保'];
 const TABS = ['①城市对比', '②买vs租', '③公积金', '④利率压力'];
 
 export default function ComparePage() {
   const [tab, setTab] = useState(0);
   const [prompt, setPrompt] = useState('');
+
+  // ① 城市对比
   const [wage, setWage] = useState('6000');
   const [curIdx, setCurIdx] = useState(2);
   const [tgtIdx, setTgtIdx] = useState(0);
+  const [housingIdx, setHousingIdx] = useState(0);
+  const [foodIdx, setFoodIdx] = useState(1);
+  const [hasCar, setHasCar] = useState(false);
+  const [insIdx, setInsIdx] = useState(0);
   const [cmp, setCmp] = useState<any>(null);
+
+  // ② 买vs租 ③ 公积金 ④ 利率
   const [brTier, setBrTier] = useState(2);
   const [brYears, setBrYears] = useState('10');
   const [br, setBr] = useState<any>(null);
@@ -34,24 +51,91 @@ export default function ComparePage() {
   const [rsRate, setRsRate] = useState('3.45');
   const [rs, setRs] = useState<any>(null);
 
+  const onCompare = () => {
+    setCmp(compareCities(Number(wage) || 0, TIERS[curIdx], TIERS[tgtIdx], INSURANCES[insIdx], HOUSINGS[housingIdx], FOODS[foodIdx], hasCar));
+    setPrompt('');
+  };
+
+  // 7 行对比数据
+  const cmpRows = cmp ? [
+    { label: '到手月薪', a: cmp.current.income_net, b: cmp.target.income_net, unit: '元' },
+    { label: '生存成本', a: cmp.current.cost_total, b: cmp.target.cost_total, unit: '元' },
+    { label: '月结余', a: cmp.current.surplus, b: cmp.target.surplus, unit: '元' },
+    { label: '结余率', a: cmp.current.surplus_rate, b: cmp.target.surplus_rate, unit: '%' },
+    { label: '社保月缴', a: cmp.current.social_ins, b: cmp.target.social_ins, unit: '元' },
+    { label: '个税', a: cmp.current.tax, b: cmp.target.tax, unit: '元' },
+    { label: '攒首付年限', a: cmp.current.house_saving_years ?? 0, b: cmp.target.house_saving_years ?? 0, unit: '年' },
+  ] : [];
+
   return (
     <View className="page">
       <View className="header"><Text className="header-title">城市与住房</Text></View>
       <SubTabs tabs={TABS} current={tab} onChange={setTab} />
 
       {tab === 0 && (
-        <View className="card calc">
-          <View className="calc-title">换城市值不值</View>
-          <View className="input-row"><Text className="label">月薪</Text><Input className="input" type="digit" value={wage} onInput={(e) => setWage(e.detail.value)} /><Text className="unit">元</Text></View>
-          <View className="input-row"><Text className="label">当前城市</Text><Picker mode="selector" range={TIERS} value={curIdx} onChange={(e) => setCurIdx(Number(e.detail.value))}><View className="picker">{TIERS[curIdx]}</View></Picker></View>
-          <View className="input-row"><Text className="label">目标城市</Text><Picker mode="selector" range={TIERS} value={tgtIdx} onChange={(e) => setTgtIdx(Number(e.detail.value))}><View className="picker">{TIERS[tgtIdx]}</View></Picker></View>
-          <Button className="btn-primary" onClick={() => { setCmp(compareCities(Number(wage) || 0, TIERS[curIdx], TIERS[tgtIdx])); setPrompt(''); }}>开始对比</Button>
-          <Button className="btn-ask" onClick={() => setPrompt(buildComparePrompt(TIERS[curIdx], TIERS[tgtIdx], Number(wage) || 0))}>问 AI</Button>
+        <View>
+          <View className="card calc">
+            <View className="calc-title">对比两个城市的生活成本</View>
+            <View className="input-row"><Text className="label">月薪（税前）</Text><Input className="input" type="digit" value={wage} onInput={(e) => setWage(e.detail.value)} /><Text className="unit">元</Text></View>
+            <View className="input-row"><Text className="label">方案A（当前）</Text><Picker mode="selector" range={TIERS} value={curIdx} onChange={(e) => setCurIdx(Number(e.detail.value))}><View className="picker">{TIERS[curIdx]}</View></Picker></View>
+            <View className="input-row"><Text className="label">方案B（目标）</Text><Picker mode="selector" range={TIERS} value={tgtIdx} onChange={(e) => setTgtIdx(Number(e.detail.value))}><View className="picker">{TIERS[tgtIdx]}</View></Picker></View>
+            <View className="input-row"><Text className="label">住房方式</Text><Picker mode="selector" range={HOUSINGS} value={housingIdx} onChange={(e) => setHousingIdx(Number(e.detail.value))}><View className="picker">{HOUSINGS[housingIdx]}</View></Picker></View>
+            <View className="input-row"><Text className="label">饮食档次</Text><Picker mode="selector" range={FOODS} value={foodIdx} onChange={(e) => setFoodIdx(Number(e.detail.value))}><View className="picker">{FOODS[foodIdx]}</View></Picker></View>
+            <View className="input-row"><Text className="label">有车</Text><Switch checked={hasCar} onChange={(e) => setHasCar(e.detail.value)} color="#e8843c" /></View>
+            <View className="input-row"><Text className="label">社保</Text><Picker mode="selector" range={INSURANCES} value={insIdx} onChange={(e) => setInsIdx(Number(e.detail.value))}><View className="picker">{INSURANCES[insIdx]}</View></Picker></View>
+            <Button className="btn-primary" onClick={onCompare}>▶ 开始对比</Button>
+          </View>
+
           {cmp && !cmp.error && (
-            <View className="result-box">
-              <View className={`big-line ${cmp.surplus_diff > 0 ? 'good' : 'bad'}`}>移居后结余{cmp.surplus_diff > 0 ? '增加' : '减少'} {fmtNum(Math.abs(cmp.surplus_diff))} 元/月</View>
-              <View className="info-row"><Text className="info-label">{TIERS[curIdx]} 结余</Text><Text className="info-val">{fmtNum(cmp.current.surplus)} 元</Text></View>
-              <View className="info-row"><Text className="info-label">{TIERS[tgtIdx]} 结余</Text><Text className="info-val">{fmtNum(cmp.target.surplus)} 元</Text></View>
+            <View>
+              {/* 7 行对比表 */}
+              <View className="card">
+                <View className="cmp-table-header">
+                  <Text className="cmp-col-item">项目</Text>
+                  <Text className="cmp-col-val">{TIERS[curIdx]}</Text>
+                  <Text className="cmp-col-diff">变化</Text>
+                  <Text className="cmp-col-val">{TIERS[tgtIdx]}</Text>
+                </View>
+                {cmpRows.map((r, i) => (
+                  <View className="cmp-table-row" key={i}>
+                    <Text className="cmp-col-item">{r.label}</Text>
+                    <Text className="cmp-col-val">{fmtNum(r.a)}{r.unit}</Text>
+                    <Text className={`cmp-col-diff ${(r.b - r.a) > 0 ? 'up' : (r.b - r.a) < 0 ? 'down' : ''}`}>{fmtDiff(r.a, r.b)}</Text>
+                    <Text className="cmp-col-val">{fmtNum(r.b)}{r.unit}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* 分项成本对比明细 */}
+              <View className="card">
+                <View className="detail-title">分项成本对比</View>
+                <View className="cmp-table-header">
+                  <Text className="cmp-col-item">项目</Text>
+                  <Text className="cmp-col-val">{TIERS[curIdx]}</Text>
+                  <Text className="cmp-col-diff">变化</Text>
+                  <Text className="cmp-col-val">{TIERS[tgtIdx]}</Text>
+                </View>
+                {cmp.current.cost_rows.map((cr: any, i: number) => {
+                  const bItem = cmp.target.cost_rows.find((x: any) => x.item === cr.item);
+                  const bAmt = bItem ? bItem.amount : 0;
+                  return (
+                    <View className="cmp-table-row" key={i}>
+                      <Text className="cmp-col-item">{cr.item}</Text>
+                      <Text className="cmp-col-val">{fmtNum(cr.amount)}</Text>
+                      <Text className={`cmp-col-diff ${(bAmt - cr.amount) > 0 ? 'up' : (bAmt - cr.amount) < 0 ? 'down' : ''}`}>{fmtDiff(cr.amount, bAmt)}</Text>
+                      <Text className="cmp-col-val">{fmtNum(bAmt)}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+
+              {/* 结论 */}
+              <View className="card">
+                <View className="detail-title">结论</View>
+                <SmartNote text={cmp.comparison_text} />
+              </View>
+
+              <Button className="btn-ask" onClick={() => setPrompt(buildComparePrompt(TIERS[curIdx], TIERS[tgtIdx], Number(wage) || 0))}>问 AI：具体两城怎么选</Button>
             </View>
           )}
         </View>
@@ -67,7 +151,7 @@ export default function ComparePage() {
           {br && (
             <View className="result-box">
               <View className={`big-line ${br.diff < 0 ? 'good' : 'bad'}`}>房价不跌时 {br.diff < 0 ? '买房省' : '租房省'} {fmtNum(Math.abs(br.diff))} 元</View>
-              <View className="note">{br.note}</View>
+              <SmartNote text={br.note} />
               <Button className="btn-ask" onClick={() => setPrompt(buildBuyRentPrompt(TIERS[brTier], Number(brYears) || 10))}>问 AI</Button>
             </View>
           )}
@@ -85,7 +169,7 @@ export default function ComparePage() {
             <View className="result-box">
               <View className="big-line">可贷 <Text className="rate warn">{fmtNum(gf.eligible)}</Text> 元</View>
               <View className="info-row"><Text className="info-label">月供</Text><Text className="info-val">{fmtNum(gf.monthly)} 元</Text></View>
-              <View className="note">{gf.note}</View>
+              <SmartNote text={gf.note} />
               <Button className="btn-ask" onClick={() => setPrompt(buildFundPrompt(TIERS[gfTier], Number(gfBalance) || 0, Number(gfContrib) || 0))}>问 AI</Button>
             </View>
           )}

@@ -28,3 +28,15 @@
   .cmp-col { flex: 1; }
   .cmp-col-title { display: block; font-size: 28px; font-weight: 600; color: $color-primary; margin-bottom: 16px; }
   .cmp-row { display: block; font-size: 26px; color: $color-text; padding: 8px 0; } }
+
+/* 城市对比表 */
+.cmp-table-header { display: flex; align-items: center; padding: 16px 0; border-bottom: 2px solid $color-primary; }
+.cmp-table-row { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid $color-border;
+  &:last-child { border-bottom: none; } }
+.cmp-col-item { flex: 1.5; font-size: 26px; color: $color-text; }
+.cmp-col-val { flex: 1; font-size: 26px; color: $color-text; text-align: right; }
+.cmp-col-diff { flex: 1; font-size: 24px; color: $color-text-muted; text-align: center; }
+.cmp-table-header .cmp-col-item { font-weight: 600; color: $color-primary; }
+.cmp-table-header .cmp-col-val { font-weight: 600; color: $color-primary; }
+.cmp-table-header .cmp-col-diff { font-weight: 600; color: $color-primary; }
+.detail-title { font-size: 30px; font-weight: 600; color: $color-text; margin-bottom: 12px; }

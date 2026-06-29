@@ -7,6 +7,7 @@ import {
   buildOvertimePrompt, buildMinWagePrompt, buildInjuryPrompt, buildUnemploymentPrompt, buildSubsidyPrompt, buildTaxPrompt,
 } from '../../core';
 import SubTabs from '../../components/SubTabs';
+import SmartNote from '../../components/SmartNote';
 import PromptCard from '../../components/PromptCard';
 import './index.scss';
 
@@ -50,7 +51,7 @@ export default function RightsPage() {
           {ot && !ot.error && (
             <View className="result-box">
               <View className="big-line">应得 <Text className="rate good">{fmtNum(ot.total_overtime)}</Text> 元</View>
-              <View className="note">{ot.note}</View>
+              <SmartNote text={ot.note} />
               <Button className="btn-ask" onClick={() => setPrompt(buildOvertimePrompt(Number(otWage) || 0, Number(wd) || 0, Number(we) || 0, Number(ho) || 0, 0, 1, true, '部分', ''))}>问 AI</Button>
             </View>
           )}
@@ -66,7 +67,7 @@ export default function RightsPage() {
           {mw && !mw.error && (
             <View className="result-box">
               <View className={`big-line ${mw.below ? 'bad' : 'good'}`}>{mw.below ? '⚠️ 低于最低工资' : '高于最低工资'}（{(mw.ratio * 100).toFixed(0)}%）</View>
-              <View className="note">{mw.note}</View>
+              <SmartNote text={mw.note} />
               <Button className="btn-ask" onClick={() => setPrompt(buildMinWagePrompt(Number(mwWage) || 0, TIERS[tierIdx]))}>问 AI</Button>
             </View>
           )}
@@ -83,7 +84,7 @@ export default function RightsPage() {
           {claim && !claim.error && (
             <View className="result-box">
               <View className={`big-line ${claim.verdict_level === 'good' ? 'good' : claim.verdict_level === 'warn' ? 'bad' : 'warn'}`}>{claim.verdict}</View>
-              <View className="note">{claim.note}</View>
+              <SmartNote text={claim.note} />
             </View>
           )}
         </View>
@@ -99,7 +100,7 @@ export default function RightsPage() {
             <View className="result-box">
               <View className="big-line">每月约 <Text className="rate good">{unemp.amt ? fmtNum(unemp.amt) : '?'}</Text> 元</View>
               <View className="info-row"><Text className="info-label">可领月数</Text><Text className="info-val">{unemp.duration} 个月</Text></View>
-              <View className="note">{unemp.note}</View>
+              <SmartNote text={unemp.note} />
               <Button className="btn-ask" onClick={() => setPrompt(buildUnemploymentPrompt(unempCity, unempYears, '', ''))}>问 AI</Button>
             </View>
           )}

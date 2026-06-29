@@ -6,6 +6,7 @@ import {
 } from '../../core';
 import SubTabs from '../../components/SubTabs';
 import PromptCard from '../../components/PromptCard';
+import SmartNote from '../../components/SmartNote';
 import './index.scss';
 
 const fmtNum = (n: number): string => {
@@ -61,8 +62,10 @@ export default function DebtPage() {
           {apr && !apr.error && (
             <View className="result-box">
               <View className="big-line">真实年化<Text className={`rate ${lc(apr.level)}`}>{(apr.annual_irr * 100).toFixed(1)}%</Text><Text className={`rate-tag ${lc(apr.level)}`}>{apr.level}</Text></View>
-              <View className="info-row"><Text className="info-label">总利息</Text><Text className="info-val">{fmtNum(apr.interest)} 元</Text></View>
-              <View className="note">{apr.note}</View>
+              <View className="info-row"><Text className="info-label">名义年化</Text><Text className="info-val">{(apr.nominal_apr * 100).toFixed(1)}%</Text></View>
+              <View className="info-row"><Text className="info-label">总还款</Text><Text className="info-val">{fmtNum(apr.total_payment)} 元</Text></View>
+              <View className="info-row"><Text className="info-label">总利息</Text><Text className="info-val">{fmtNum(apr.interest)} 元（{(apr.interest_ratio * 100).toFixed(0)}%）</Text></View>
+              <SmartNote text={apr.note} />
               <Button className="btn-ask" onClick={() => setPrompt(buildLoanAprPrompt(Number(principal) || 0, Number(monthly) || 0, Number(periods) || 0))}>问 AI</Button>
             </View>
           )}
@@ -80,7 +83,7 @@ export default function DebtPage() {
             <View className="result-box">
               <View className="info-row"><Text className="info-label">最多能借</Text><Text className="info-val strong">{fmtNum(aff.max_principal)} 元</Text></View>
               <View className="info-row"><Text className="info-label">稳妥档</Text><Text className="info-val">{fmtNum(aff.safe_principal)} 元</Text></View>
-              <View className="note">{aff.note}</View>
+              <SmartNote text={aff.note} />
               <Button className="btn-ask" onClick={() => setPrompt(buildAffordableDebtPrompt(Number(surplus) || 0, Number(aprPct) || 0, Number(periods2) || 0))}>问 AI</Button>
             </View>
           )}
@@ -117,7 +120,7 @@ export default function DebtPage() {
                   <View className="info-row"><Text className="info-label">总利息</Text><Text className="info-val">{fmtNum(payoff.total_interest)} 元</Text></View>
                 </>
               )}
-              <View className="note">{payoff.note}</View>
+              <SmartNote text={payoff.note} />
               <Button className="btn-ask" onClick={() => setPrompt(buildDebtPayoffPrompt(`债1: ${d1b}元/${d1r}%/月还${d1m}\n债2: ${d2b}元/${d2r}%/月还${d2m}`, Number(extra) || 0))}>问 AI</Button>
             </View>
           )}
@@ -138,7 +141,7 @@ export default function DebtPage() {
               <View className="big-line">{months}月后欠 <Text className={`rate ${spiral.final_balance > Number(init) ? 'bad' : 'good'}`}>{fmtNum(spiral.final_balance)}</Text> 元</View>
               {spiral.doubled && <View className="info-row"><Text className="info-label">翻倍用时</Text><Text className="info-val">{spiral.doubling_month} 月</Text></View>}
               <View className="info-row"><Text className="info-label">止血线</Text><Text className="info-val">月还 {fmtNum(spiral.breakeven_monthly)} 元</Text></View>
-              <View className="note">{spiral.note}</View>
+              <SmartNote text={spiral.note} />
               <Button className="btn-ask" onClick={() => setPrompt(buildSpiralPrompt(Number(init) || 0, Number(spiralApr) || 0, Number(months) || 0, Number(pay) || 0))}>问 AI</Button>
             </View>
           )}
@@ -160,7 +163,7 @@ export default function DebtPage() {
               <View className="info-row"><Text className="info-label">负债收入比</Text><Text className="info-val">{(health.debt_ratio * 100).toFixed(0)}%</Text></View>
               <View className="info-row"><Text className="info-label">月供占收入</Text><Text className="info-val">{(health.pay_ratio * 100).toFixed(0)}%</Text></View>
               {health.months !== null && <View className="info-row"><Text className="info-label">还清月数</Text><Text className="info-val">{health.months} 月</Text></View>}
-              <View className="note">{health.note}</View>
+              <SmartNote text={health.note} />
               <Button className="btn-ask" onClick={() => setPrompt(buildDebtHealthPrompt(Number(totalDebt) || 0, Number(income) || 0, Number(monthlyPay) || 0, (Number(healthApr) || 0) / 100))}>问 AI</Button>
             </View>
           )}
