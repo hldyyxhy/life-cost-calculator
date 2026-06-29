@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, Input, Picker, Switch, Button } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
+import { useDidShow } from '@tarojs/taro';
 import {
   compareCities, compareBuyRent, housingFundLoan, rateStressTest, loadLastProfile,
   buildComparePrompt, buildBuyRentPrompt, buildFundPrompt, buildRateStressPrompt,

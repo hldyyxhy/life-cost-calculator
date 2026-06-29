@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Input, Picker, Radio, Button } from '@tarojs/components';
+import { View, Text, Input, Picker, Button } from '@tarojs/components';
 import { cityFactor, computeLifeCost, computeSurplus, buildMilestonesPrompt } from '../../core';
 import costData from '../../core/data/cost.json';
 import PromptCard from '../../components/PromptCard';
