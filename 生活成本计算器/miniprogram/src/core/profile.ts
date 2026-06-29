@@ -30,7 +30,7 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: 'health', default: '健康（无慢性病）', label: '健康状况', ctype: 'combo', meta: ['健康（无慢性病）', '有慢性病（需长期用药）', '需定期就医'] },
   ],
   income: [
-    { key: 'wage', default: '', label: '本人税前月薪（元）', ctype: 'entry', meta: '留空则用本城市典型月薪' },
+    { key: 'wage', default: '', label: '本人税前月薪（元）', ctype: 'entry', meta: '' },
     { key: 'insurance', default: '在职（单位缴）', label: '社保类型', ctype: 'combo', meta: ['在职（单位缴）', '灵活就业（全自缴）', '不缴社保'] },
     { key: 'has_side_income', default: false, label: '有副业/兼职收入', ctype: 'check', meta: null },
     { key: 'side_income', default: '', label: '副业月收入（元）', ctype: 'entry', meta: '到手估算' },

@@ -1,7 +1,13 @@
 @import '../styles/vars';
 
-.sub-tabs { display: flex; white-space: nowrap; padding: 0 8px; margin-bottom: 16px; width: 100%; }
+.sub-tabs-wrap { position: relative; margin-bottom: 16px; }
+.sub-tabs { display: flex; white-space: nowrap; padding: 0 8px; width: 100%; }
 .sub-tab { display: inline-block; padding: 14px 28px; margin: 0 6px; border-radius: 24px; background: $color-card; flex-shrink: 0;
   &.active { background: $color-primary; }
   .sub-tab-text { font-size: 26px; color: $color-text-muted; } }
 .sub-tab.active .sub-tab-text { color: #fff; }
+
+/* 右滑提示：右侧渐变 + › 箭头，暗示还有更多 tab */
+.sub-tabs-hint { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; padding: 0 6px 0 20px;
+  font-size: 32px; color: rgba(232,132,60,0.6); pointer-events: none;
+  background: linear-gradient(to right, transparent, #faf4ec 50%); }
