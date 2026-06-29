@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { View, Text, Input, Picker, Switch, Button } from '@tarojs/components';
+import Taro, { useDidShow } from '@tarojs/taro';
 import {
-  compareCities, compareBuyRent, housingFundLoan, rateStressTest,
+  compareCities, compareBuyRent, housingFundLoan, rateStressTest, loadLastProfile,
   buildComparePrompt, buildBuyRentPrompt, buildFundPrompt, buildRateStressPrompt,
 } from '../../core';
+import { taroStorage } from '../../utils/storage';
 import SubTabs from '../../components/SubTabs';
 import SmartNote from '../../components/SmartNote';
 import PromptCard from '../../components/PromptCard';
@@ -50,6 +52,19 @@ export default function ComparePage() {
   const [rsPrincipal, setRsPrincipal] = useState('500000');
   const [rsRate, setRsRate] = useState('3.45');
   const [rs, setRs] = useState<any>(null);
+
+  // 从档案预填（各页共享档案）
+  useDidShow(() => {
+    const p = loadLastProfile(taroStorage);
+    if (p) {
+      setWage(String(p.wage ?? ''));
+      setCurIdx(Math.max(0, TIERS.indexOf(p.tier)));
+      setHousingIdx(Math.max(0, HOUSINGS.indexOf(p.housing)));
+      setFoodIdx(Math.max(0, FOODS.indexOf(p.food)));
+      setHasCar(!!p.has_car);
+      setInsIdx(Math.max(0, INSURANCES.indexOf(p.insurance)));
+    }
+  });
 
   const onCompare = () => {
     setCmp(compareCities(Number(wage) || 0, TIERS[curIdx], TIERS[tgtIdx], INSURANCES[insIdx], HOUSINGS[housingIdx], FOODS[foodIdx], hasCar));

@@ -100,11 +100,9 @@ export default function MilestonesPage() {
       {/* 第一座山：结婚 */}
       <View className="card mountain">
         <View className="mountain-title">第一座山：结婚</View>
-        <View className="radio-group">
-          <Radio checked={purchase === '贷款'} onChange={() => setPurchase('贷款')} color="#e8843c" />
-          <Text className="radio-label" onClick={() => setPurchase('贷款')}>贷款（算首付）</Text>
-          <Radio checked={purchase === '全款'} onChange={() => setPurchase('全款')} color="#e8843c" />
-          <Text className="radio-label" onClick={() => setPurchase('全款')}>全款</Text>
+        <View className="seg-tabs">
+          <View className={`seg-tab ${purchase === '贷款' ? 'active' : ''}`} onClick={() => setPurchase('贷款')}><Text>贷款（算首付）</Text></View>
+          <View className={`seg-tab ${purchase === '全款' ? 'active' : ''}`} onClick={() => setPurchase('全款')}><Text>全款</Text></View>
         </View>
         <Button className="btn-primary" onClick={calcMarriage}>计算结婚成本</Button>
         {marriage && (

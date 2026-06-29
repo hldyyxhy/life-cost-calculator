@@ -18,6 +18,11 @@
 .radio-group { display: flex; align-items: center; padding: 16px 0;
   .radio-label { font-size: 28px; color: $color-text; margin-right: 24px; margin-left: 8px; } }
 
+/* 段选器（贷款/全款切换，替代 Radio 避免小程序兼容问题） */
+.seg-tabs { display: flex; background: $color-primary-bg; border-radius: 12px; padding: 4px; margin: 12px 0; }
+.seg-tab { flex: 1; text-align: center; padding: 16px 0; border-radius: 10px; font-size: 28px; color: $color-text-muted;
+  &.active { background: $color-primary; color: #fff; } }
+
 .btn-primary { margin-top: 20px; background: $color-primary; color: #fff; border-radius: 48px; font-size: 32px; border: none;
   &::after { border: none; } }
 .btn-ask { margin-top: 16px; background: transparent; color: $color-primary; border: 1px solid $color-primary; border-radius: 48px; font-size: 28px;
