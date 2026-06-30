@@ -1,0 +1,12 @@
+@import '../styles/vars';
+
+.rich-note {
+  .rn-seg { display: block; font-size: 26px; line-height: 1.8; color: $color-text; }
+  .rn-h { color: $color-primary; font-weight: 600; font-size: 28px; margin-top: 8px; }
+  .rn-big { color: $color-good; font-weight: 700; font-size: 32px; }
+  .rn-bigbad { color: $color-accent; font-weight: 700; font-size: 32px; }
+  .rn-buy { color: $color-primary; font-weight: 600; }
+  .rn-rent { color: #4a90d9; font-weight: 600; }
+  .rn-warn { color: $color-accent; }
+  .rn-muted { color: $color-text-muted; font-size: 24px; }
+}

@@ -8,6 +8,7 @@ import {
 import { taroStorage } from '../../utils/storage';
 import SubTabs from '../../components/SubTabs';
 import SmartNote from '../../components/SmartNote';
+import RichNote from '../../components/RichNote';
 import { fmtNum } from '../../utils/format';
 import PromptCard from '../../components/PromptCard';
 import './index.scss';
@@ -148,7 +149,7 @@ export default function ComparePage() {
               {/* 结论 */}
               <View className="card">
                 <View className="detail-title">结论</View>
-                <SmartNote text={cmp.comparison_text} />
+                <RichNote rich={cmp.rich} />
               </View>
 
               <Button className="btn-ask" onClick={() => setPrompt(buildComparePrompt(TIERS[curIdx], TIERS[tgtIdx], Number(wage) || 0))}>问 AI：具体两城怎么选</Button>
@@ -167,7 +168,7 @@ export default function ComparePage() {
           {br && (
             <View className="result-box">
               <View className={`big-line ${br.diff < 0 ? 'good' : 'bad'}`}>房价不跌时 {br.diff < 0 ? '买房省' : '租房省'} {fmtNum(Math.abs(br.diff))} 元</View>
-              <SmartNote text={br.note} />
+              <RichNote rich={br.rich} />
               <Button className="btn-ask" onClick={() => setPrompt(buildBuyRentPrompt(TIERS[brTier], Number(brYears) || 10))}>问 AI</Button>
             </View>
           )}
@@ -185,7 +186,7 @@ export default function ComparePage() {
             <View className="result-box">
               <View className="big-line">可贷 <Text className="rate warn">{fmtNum(gf.eligible)}</Text> 元</View>
               <View className="info-row"><Text className="info-label">月供</Text><Text className="info-val">{fmtNum(gf.monthly)} 元</Text></View>
-              <SmartNote text={gf.note} />
+              <RichNote rich={gf.rich} />
               <Button className="btn-ask" onClick={() => setPrompt(buildFundPrompt(TIERS[gfTier], Number(gfBalance) || 0, Number(gfContrib) || 0))}>问 AI</Button>
             </View>
           )}
@@ -203,7 +204,7 @@ export default function ComparePage() {
               {rs.rows.map((r: any, i: number) => (
                 <View className="info-row" key={i}><Text className="info-label">{(r.rate * 100).toFixed(2)}%{i === 0 ? ' 基准' : i === 1 ? ' +0.5%' : ' +1%'}</Text><Text className="info-val">{fmtNum(r.monthly)} 元/月</Text></View>
               ))}
-              <View className="note">涨1%月供多 {fmtNum(rs.rows[2].monthly - rs.rows[0].monthly)} 元。</View>
+              <RichNote rich={rs.rich} />
               <Button className="btn-ask" onClick={() => setPrompt(buildRateStressPrompt(Number(rsPrincipal) || 0, (Number(rsRate) || 0) / 100))}>问 AI</Button>
             </View>
           )}
