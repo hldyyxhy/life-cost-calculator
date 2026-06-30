@@ -1,9 +1,11 @@
 @import '../styles/vars';
 
 .sub-tabs-wrap { position: relative; margin-bottom: 16px; }
-/* 关键：不设 display:flex / width:100%，用 white-space:nowrap 让内容自然撑开，
-   ScrollView 才能识别溢出并允许横向滚动（Taro/小程序 scrollX 的正确姿势） */
-.sub-tabs { white-space: nowrap; padding: 0 8px; }
+
+/* CSS 横向滚动（替代 ScrollView，不受重渲染影响） */
+.sub-tabs-scroll { overflow-x: scroll; white-space: nowrap; padding: 0 8px; -webkit-overflow-scrolling: touch;
+  &::-webkit-scrollbar { display: none; } }
+
 .sub-tab { display: inline-block; padding: 14px 28px; margin: 0 6px; border-radius: 24px; background: $color-card; transition: background 0.2s ease, transform 0.1s ease;
   &.active { background: $color-primary; }
   &:active { transform: scale(0.95); }
