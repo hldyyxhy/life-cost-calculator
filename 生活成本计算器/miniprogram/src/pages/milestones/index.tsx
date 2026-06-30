@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { View, Text, Input, Picker, Button } from '@tarojs/components';
-import { cityFactor, computeLifeCost, computeSurplus, buildMilestonesPrompt } from '../../core';
+import { useDidShow } from '@tarojs/taro';
+import { cityFactor, computeLifeCost, computeSurplus, buildMilestonesPrompt, loadLastProfile } from '../../core';
+import { taroStorage } from '../../utils/storage';
 import costData from '../../core/data/cost.json';
 import PromptCard from '../../components/PromptCard';
 import SmartNote from '../../components/SmartNote';
@@ -36,6 +38,15 @@ export default function MilestonesPage() {
   const [retire, setRetire] = useState<any>(null);
   // 问 AI
   const [prompt, setPrompt] = useState('');
+
+  // 从档案预填
+  useDidShow(() => {
+    const p = loadLastProfile(taroStorage);
+    if (p) {
+      setTierIdx(Math.max(0, TIERS.indexOf(p.tier)));
+      if (p.wage) setWage(String(p.wage));
+    }
+  });
 
   const tier = TIERS[tierIdx];
   const wageN = Number(wage) || 5000;

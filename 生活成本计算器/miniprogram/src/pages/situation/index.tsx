@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Input, Picker, Switch, Button, ScrollView } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
-import { computeCurrentSituation, loadLastProfile, buildCurrentSituationPrompt } from '../../core';
+import { computeCurrentSituation, loadLastProfile, buildCurrentSituationPrompt, buildFullReport } from '../../core';
 import { taroStorage } from '../../utils/storage';
 import SmartNote from '../../components/SmartNote';
 import PromptCard from '../../components/PromptCard';
@@ -28,6 +28,7 @@ export default function SituationPage() {
   const [result, setResult] = useState<any>(null);
   const [prompt, setPrompt] = useState('');
   const [overrides, setOverrides] = useState<any>(null);
+  const [report, setReport] = useState('');
   // overrides 弹窗
   const [showOv, setShowOv] = useState(false);
   const [ovVals, setOvVals] = useState<Record<string, string>>({});
@@ -144,7 +145,12 @@ export default function SituationPage() {
             ))}
           </View>
           <View className="card interp"><SmartNote text={result.interpretation} /></View>
+          <Button className="btn-ask" onClick={() => {
+            const prof = loadLastProfile(taroStorage) || {};
+            setReport(buildFullReport(prof, result, null, null));
+          }}>📋 生成完整报告</Button>
           <PromptCard prompt={prompt} />
+          <PromptCard prompt={report} title="完整报告（可复制保存）" />
         </View>
       )}
 

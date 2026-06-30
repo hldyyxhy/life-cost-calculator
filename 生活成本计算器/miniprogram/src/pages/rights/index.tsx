@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { View, Text, Input, Picker, Switch, Button } from '@tarojs/components';
+import { useDidShow } from '@tarojs/taro';
+import { loadLastProfile } from '../../core';
+import { taroStorage } from '../../utils/storage';
 import {
   computeOvertimePay, computeMinWageCheck, assessOvertimeClaim,
   estimateUnemploymentPay, unemployDuration, calcInjuryOneTime, calcInjuryPension, getProvinceInjuryExtra,
@@ -34,6 +37,15 @@ export default function RightsPage() {
   const [taxSpecial, setTaxSpecial] = useState('4000'); const [taxSocial, setTaxSocial] = useState('1500');
   const [taxKids, setTaxKids] = useState(false); const [taxElderly, setTaxElderly] = useState(false); const [taxLoan, setTaxLoan] = useState(false);
   const [tax, setTax] = useState<any>(null); const [taxHints, setTaxHints] = useState<string[] | null>(null);
+
+  // 从档案预填
+  useDidShow(() => {
+    const p = loadLastProfile(taroStorage);
+    if (p) {
+      if (p.wage) { setOtWage(String(p.wage)); setMwWage(String(p.wage)); }
+      if (p.tier) setTierIdx(Math.max(0, TIERS.indexOf(p.tier)));
+    }
+  });
 
   return (
     <View className="page">
