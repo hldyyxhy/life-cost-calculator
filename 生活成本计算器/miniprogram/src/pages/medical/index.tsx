@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { View, Text, Input, Picker, Switch, Button } from '@tarojs/components';
-import { estimateInpatient, buildMedicalPrompt } from '../../core';
+import { estimateInpatient, buildMedicalPrompt, loadLastProfile } from '../../core';
+import { taroStorage } from '../../utils/storage';
+import { useDidShow } from '@tarojs/taro';
 import PromptCard from '../../components/PromptCard';
 import SmartNote from '../../components/SmartNote';
 import './index.scss';
@@ -21,6 +23,11 @@ export default function MedicalPage() {
   const [retired, setRetired] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [prompt, setPrompt] = useState('');
+
+  useDidShow(() => {
+    const p = loadLastProfile(taroStorage);
+    if (p && p.city) setCity(p.city);
+  });
 
   return (
     <View className="page">

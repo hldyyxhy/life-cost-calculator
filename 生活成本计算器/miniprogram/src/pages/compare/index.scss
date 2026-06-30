@@ -35,7 +35,9 @@
   &:last-child { border-bottom: none; } }
 .cmp-col-item { flex: 1.5; font-size: 26px; color: $color-text; }
 .cmp-col-val { flex: 1; font-size: 26px; color: $color-text; text-align: right; }
-.cmp-col-diff { flex: 1; font-size: 24px; color: $color-text-muted; text-align: center; }
+.cmp-col-diff { flex: 1; font-size: 24px; color: $color-text-muted; text-align: center;
+  &.good { color: $color-good; font-weight: 600; }
+  &.bad { color: $color-accent; font-weight: 600; } }
 .cmp-table-header .cmp-col-item { font-weight: 600; color: $color-primary; }
 .cmp-table-header .cmp-col-val { font-weight: 600; color: $color-primary; }
 .cmp-table-header .cmp-col-diff { font-weight: 600; color: $color-primary; }

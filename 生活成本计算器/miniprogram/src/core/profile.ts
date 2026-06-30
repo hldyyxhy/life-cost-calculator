@@ -39,7 +39,7 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: 'housing', default: '合租单间', label: '住房方式', ctype: 'combo', meta: ['合租单间', '一居室整租', '已购房（还月供）', '免租'] },
     { key: 'food', default: '普通', label: '饮食档次', ctype: 'combo', meta: ['节俭', '普通', '宽裕'] },
     { key: 'has_car', default: false, label: '养车', ctype: 'check', meta: null },
-    { key: 'support_family', default: '', label: '给老家生活费（元/月）', ctype: 'entry', meta: '0 或留空表示不给' },
+    { key: 'support_family', default: '', label: '给老家生活费（元/月）', ctype: 'entry', meta: '' },
   ],
   partner: [
     { key: 'has_partner', default: false, label: '有伴侣/配偶', ctype: 'check', meta: null },
@@ -58,9 +58,9 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
   ],
   finance: [
     { key: 'mortgage_monthly', default: '', label: '房贷月供（元，另计/非默认）', ctype: 'entry', meta: "留空用默认" },
-    { key: 'car_loan_monthly', default: '', label: '车贷月供（元）', ctype: 'entry', meta: '0 或留空' },
+    { key: 'car_loan_monthly', default: '', label: '车贷月供（元）', ctype: 'entry', meta: '' },
     { key: 'savings', default: '', label: '现有存款/应急金（元）', ctype: 'entry', meta: '用于估算失业能撑多久' },
-    { key: 'social_expense', default: '', label: '人情/娱乐月支出（元）', ctype: 'entry', meta: '0 或留空' },
+    { key: 'social_expense', default: '', label: '人情/娱乐月支出（元）', ctype: 'entry', meta: '' },
   ],
 };
 

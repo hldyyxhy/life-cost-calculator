@@ -73,13 +73,13 @@ export default function ComparePage() {
 
   // 7 行对比数据
   const cmpRows = cmp ? [
-    { label: '到手月薪', a: cmp.current.income_net, b: cmp.target.income_net, unit: '元' },
-    { label: '生存成本', a: cmp.current.cost_total, b: cmp.target.cost_total, unit: '元' },
-    { label: '月结余', a: cmp.current.surplus, b: cmp.target.surplus, unit: '元' },
-    { label: '结余率', a: cmp.current.surplus_rate, b: cmp.target.surplus_rate, unit: '%' },
-    { label: '社保月缴', a: cmp.current.social_ins, b: cmp.target.social_ins, unit: '元' },
-    { label: '个税', a: cmp.current.tax, b: cmp.target.tax, unit: '元' },
-    { label: '攒首付年限', a: cmp.current.house_saving_years ?? 0, b: cmp.target.house_saving_years ?? 0, unit: '年' },
+    { label: '到手月薪', a: cmp.current.income_net, b: cmp.target.income_net, unit: '元', goodUp: true },
+    { label: '生存成本', a: cmp.current.cost_total, b: cmp.target.cost_total, unit: '元', goodUp: false },
+    { label: '月结余', a: cmp.current.surplus, b: cmp.target.surplus, unit: '元', goodUp: true },
+    { label: '结余率', a: cmp.current.surplus_rate, b: cmp.target.surplus_rate, unit: '%', goodUp: true },
+    { label: '社保月缴', a: cmp.current.social_ins, b: cmp.target.social_ins, unit: '元', goodUp: false },
+    { label: '个税', a: cmp.current.tax, b: cmp.target.tax, unit: '元', goodUp: false },
+    { label: '攒首付年限', a: cmp.current.house_saving_years ?? 0, b: cmp.target.house_saving_years ?? 0, unit: '年', goodUp: false },
   ] : [];
 
   return (
@@ -111,14 +111,19 @@ export default function ComparePage() {
                   <Text className="cmp-col-diff">变化</Text>
                   <Text className="cmp-col-val">{TIERS[tgtIdx]}</Text>
                 </View>
-                {cmpRows.map((r, i) => (
-                  <View className="cmp-table-row" key={i}>
-                    <Text className="cmp-col-item">{r.label}</Text>
-                    <Text className="cmp-col-val">{fmtNum(r.a)}{r.unit}</Text>
-                    <Text className={`cmp-col-diff ${(r.b - r.a) > 0 ? 'up' : (r.b - r.a) < 0 ? 'down' : ''}`}>{fmtDiff(r.a, r.b)}</Text>
-                    <Text className="cmp-col-val">{fmtNum(r.b)}{r.unit}</Text>
-                  </View>
-                ))}
+                {cmpRows.map((r, i) => {
+                  const diff = r.b - r.a;
+                  const isGood = diff !== 0 && (r.goodUp ? diff > 0 : diff < 0);
+                  const isBad = diff !== 0 && !isGood;
+                  return (
+                    <View className="cmp-table-row" key={i}>
+                      <Text className="cmp-col-item">{r.label}</Text>
+                      <Text className="cmp-col-val">{fmtNum(r.a)}{r.unit}</Text>
+                      <Text className={`cmp-col-diff ${isGood ? 'good' : isBad ? 'bad' : ''}`}>{fmtDiff(r.a, r.b)}</Text>
+                      <Text className="cmp-col-val">{fmtNum(r.b)}{r.unit}</Text>
+                    </View>
+                  );
+                })}
               </View>
 
               {/* 分项成本对比明细 */}
@@ -137,7 +142,7 @@ export default function ComparePage() {
                     <View className="cmp-table-row" key={i}>
                       <Text className="cmp-col-item">{cr.item}</Text>
                       <Text className="cmp-col-val">{fmtNum(cr.amount)}</Text>
-                      <Text className={`cmp-col-diff ${(bAmt - cr.amount) > 0 ? 'up' : (bAmt - cr.amount) < 0 ? 'down' : ''}`}>{fmtDiff(cr.amount, bAmt)}</Text>
+                      <Text className={`cmp-col-diff ${(bAmt - cr.amount) < 0 ? 'good' : (bAmt - cr.amount) > 0 ? 'bad' : ''}`}>{fmtDiff(cr.amount, bAmt)}</Text>
                       <Text className="cmp-col-val">{fmtNum(bAmt)}</Text>
                     </View>
                   );
