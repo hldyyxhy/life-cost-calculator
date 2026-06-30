@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, Input, Picker, Switch, Button, ScrollView } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
+import Taro, { useDidShow, useShareAppMessage } from '@tarojs/taro';
 import { computeCurrentSituation, loadLastProfile, buildCurrentSituationPrompt, buildFullReport } from '../../core';
 import { taroStorage } from '../../utils/storage';
 import SmartNote from '../../components/SmartNote';
@@ -31,6 +31,8 @@ export default function SituationPage() {
   // overrides 弹窗
   const [showOv, setShowOv] = useState(false);
   const [ovVals, setOvVals] = useState<Record<string, string>>({});
+
+  useShareAppMessage(() => ({ title: '生活成本计算器——看清你的钱花哪了', path: '/pages/situation/index' }));
 
   useDidShow(() => {
     const p = loadLastProfile(taroStorage);

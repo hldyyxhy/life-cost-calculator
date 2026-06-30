@@ -1,5 +1,5 @@
 import { View, Text } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useShareAppMessage } from '@tarojs/taro';
 import './index.scss';
 
 // 工具箱：tabBar 放不下的功能（对齐 Python 导航 6-10 项）
@@ -12,6 +12,7 @@ const TOOLS = [
 ];
 
 export default function AboutPage() {
+  useShareAppMessage(() => ({ title: '生活成本计算器——看清你的钱花哪了', path: '/pages/situation/index' }));
   return (
     <View className="page">
       <View className="header"><Text className="header-title">更多工具</Text></View>
