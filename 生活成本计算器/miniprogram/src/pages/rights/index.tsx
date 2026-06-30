@@ -3,6 +3,7 @@ import { View, Text, Input, Picker, Switch, Button } from '@tarojs/components';
 import { useDidShow } from '@tarojs/taro';
 import { loadLastProfile } from '../../core';
 import { taroStorage } from '../../utils/storage';
+import rightsData from '../../core/data/rights.json';
 import {
   computeOvertimePay, computeMinWageCheck, assessOvertimeClaim,
   estimateUnemploymentPay, unemployDuration, calcInjuryOneTime, calcInjuryPension, getProvinceInjuryExtra,
@@ -40,6 +41,10 @@ export default function RightsPage() {
     if (p) {
       if (p.wage) { setOtWage(String(p.wage)); setMwWage(String(p.wage)); }
       if (p.tier) setTierIdx(Math.max(0, TIERS.indexOf(p.tier)));
+      if (p.city) {
+        const c2p = (rightsData as any).CITY_TO_PROVINCE;
+        setInjuryCity(c2p[p.city] || p.city);
+      }
     }
   });
 
@@ -133,6 +138,7 @@ export default function RightsPage() {
               <View className="big-line">一次性补助 <Text className="rate warn">{fmtNum(injury.amount)}</Text> 元</View>
               {injury.ratio !== null && <View className="info-row"><Text className="info-label">伤残津贴</Text><Text className="info-val">{fmtNum(injury.pension)} 元/月</Text></View>}
               {injury.medical !== null && <View className="info-row"><Text className="info-label">医疗补助</Text><Text className="info-val">{fmtNum(injury.medical)} 元</Text></View>}
+              {injury.medical === null && injury.employment === null && <View className="note" style="color:#d9534f;font-weight:600">⚠️ {injury.baseNote || '该省工伤数据未收录'}（以上为国家标准）</View>}
               <Button className="btn-ask" onClick={() => setPrompt(buildInjuryPrompt(injuryCity, injury.grade, injury.wage))}>问 AI</Button>
             </View>
           )}
