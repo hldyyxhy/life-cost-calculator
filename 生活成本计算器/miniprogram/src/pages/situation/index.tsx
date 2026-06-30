@@ -151,7 +151,9 @@ export default function SituationPage() {
           </View>
           <Button className="btn-ask" onClick={() => {
             const prof = loadLastProfile(taroStorage) || {};
-            setReport(buildFullReport(prof, result, null, null));
+            const cmpStr = taroStorage.getItem('last_result_compare');
+            const cmpResult = cmpStr ? JSON.parse(cmpStr) : null;
+            setReport(buildFullReport(prof, result, cmpResult, null));
           }}>📋 生成完整报告</Button>
           <PromptCard prompt={prompt} />
           <PromptCard prompt={report} title="完整报告（可复制保存）" />

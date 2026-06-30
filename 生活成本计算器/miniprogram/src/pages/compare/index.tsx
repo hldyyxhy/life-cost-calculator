@@ -64,7 +64,9 @@ export default function ComparePage() {
   });
 
   const onCompare = () => {
-    setCmp(compareCities(Number(wage) || 0, TIERS[curIdx], TIERS[tgtIdx], INSURANCES[insIdx], HOUSINGS[housingIdx], FOODS[foodIdx], hasCar));
+    const r = compareCities(Number(wage) || 0, TIERS[curIdx], TIERS[tgtIdx], INSURANCES[insIdx], HOUSINGS[housingIdx], FOODS[foodIdx], hasCar);
+    setCmp(r);
+    if (r && !r.error) taroStorage.setItem('last_result_compare', JSON.stringify(r));
     setPrompt('');
   };
 
