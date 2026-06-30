@@ -135,10 +135,15 @@ export default function RightsPage() {
           }}>算工伤赔偿</Button>
           {injury && (
             <View className="result-box">
-              <View className="big-line">一次性补助 <Text className="rate warn">{fmtNum(injury.amount)}</Text> 元</View>
-              {injury.ratio !== null && <View className="info-row"><Text className="info-label">伤残津贴</Text><Text className="info-val">{fmtNum(injury.pension)} 元/月</Text></View>}
-              {injury.medical !== null && <View className="info-row"><Text className="info-label">医疗补助</Text><Text className="info-val">{fmtNum(injury.medical)} 元</Text></View>}
-              {injury.medical === null && injury.employment === null && <View className="note" style="color:#d9534f;font-weight:600">⚠️ {injury.baseNote || '该省工伤数据未收录'}（以上为国家标准）</View>}
+              {injury.medical === null && injury.employment === null ? (
+                <View className="note" style="color:#d9534f;font-weight:600">⚠️ {injury.baseNote || '该省工伤数据未收录'}。请确认省份名（如"浙江"而非"台州"），或点下方问 AI 查当地标准。</View>
+              ) : (
+                <>
+                  <View className="big-line">一次性补助 <Text className="rate warn">{fmtNum(injury.amount)}</Text> 元</View>
+                  {injury.ratio !== null && <View className="info-row"><Text className="info-label">伤残津贴</Text><Text className="info-val">{fmtNum(injury.pension)} 元/月</Text></View>}
+                  {injury.medical !== null && <View className="info-row"><Text className="info-label">医疗补助</Text><Text className="info-val">{fmtNum(injury.medical)} 元</Text></View>}
+                </>
+              )}
               <Button className="btn-ask" onClick={() => setPrompt(buildInjuryPrompt(injuryCity, injury.grade, injury.wage))}>问 AI</Button>
             </View>
           )}
