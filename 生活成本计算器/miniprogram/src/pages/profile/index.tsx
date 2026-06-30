@@ -42,8 +42,7 @@ export default function ProfilePage() {
     saveLastProfile(taroStorage, prof);
     setProfile(prof);
     setShowWizard(false);
-    Taro.showToast({ title: '档案已创建', icon: 'success' });
-    setTimeout(() => Taro.switchTab({ url: '/pages/situation/index' }), 800);
+    Taro.switchTab({ url: '/pages/situation/index' });
   };
 
   const renderField = (f: any) => {
