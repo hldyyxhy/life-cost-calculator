@@ -26,6 +26,8 @@ export default function SituationPage() {
   const [prompt, setPrompt] = useState('');
   const [overrides, setOverrides] = useState<any>(null);
   const [report, setReport] = useState('');
+  const [showDetail, setShowDetail] = useState(false);
+  const [showInterp, setShowInterp] = useState(false);
   // overrides 弹窗
   const [showOv, setShowOv] = useState(false);
   const [ovVals, setOvVals] = useState<Record<string, string>>({});
@@ -136,12 +138,15 @@ export default function SituationPage() {
             {overrides && <Text className="ov-note" onClick={onResetOv}>（显示的是你改过的实际值，点此恢复估算）</Text>}
           </View>
           <View className="card detail">
-            <View className="detail-title">成本明细</View>
-            {result.cost_rows.map((r: any, i: number) => (
+            <View className="detail-title" onClick={() => setShowDetail(!showDetail)}>{showDetail ? '▼' : '▶'} 成本明细</View>
+            {showDetail && result.cost_rows.map((r: any, i: number) => (
               <View className="detail-row" key={i}><Text className="detail-item">{r.item}</Text><Text className="detail-amount">{fmtNum(r.amount)} 元</Text></View>
             ))}
           </View>
-          <View className="card interp"><SmartNote text={result.interpretation} /></View>
+          <View className="card interp">
+            <View className="detail-title" onClick={() => setShowInterp(!showInterp)}>{showInterp ? '▼' : '▶'} 白话解读</View>
+            {showInterp && <SmartNote text={result.interpretation} />}
+          </View>
           <Button className="btn-ask" onClick={() => {
             const prof = loadLastProfile(taroStorage) || {};
             setReport(buildFullReport(prof, result, null, null));

@@ -9,6 +9,7 @@ import './index.scss';
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(() => loadLastProfile(taroStorage) || defaultProfile());
   const [showWizard, setShowWizard] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(['basic']));
   const hasChecked = useRef(false);
 
   useDidShow(() => {
@@ -42,6 +43,7 @@ export default function ProfilePage() {
     setProfile(prof);
     setShowWizard(false);
     Taro.showToast({ title: '档案已创建', icon: 'success' });
+    setTimeout(() => Taro.switchTab({ url: '/pages/situation/index' }), 800);
   };
 
   const renderField = (f: any) => {
@@ -105,8 +107,12 @@ export default function ProfilePage() {
     <View className="page">
       {Object.entries(FIELD_DEFS).map(([group, fields]: [string, any]) => (
         <View className="card group" key={group}>
-          <View className="group-title">{GROUP_TITLES[group]}</View>
-          {fields.map(renderField)}
+          <View className="group-title" onClick={() => {
+            const next = new Set(expanded);
+            if (next.has(group)) next.delete(group); else next.add(group);
+            setExpanded(next);
+          }}>{expanded.has(group) ? '▼' : '▶'} {GROUP_TITLES[group]}</View>
+          {expanded.has(group) && (fields as any[]).map(renderField)}
         </View>
       ))}
       <Button className="btn-primary" onClick={onSave}>保存档案</Button>
