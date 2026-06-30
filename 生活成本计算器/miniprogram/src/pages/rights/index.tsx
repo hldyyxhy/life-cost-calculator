@@ -11,14 +11,10 @@ import {
 } from '../../core';
 import SubTabs from '../../components/SubTabs';
 import SmartNote from '../../components/SmartNote';
+import { fmtNum } from '../../utils/format';
 import PromptCard from '../../components/PromptCard';
 import './index.scss';
 
-const fmtNum = (n: number): string => {
-  if (n === null || n === undefined) return '—';
-  const neg = n < 0;
-  return (neg ? '-' : '') + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
 const TIERS = ['一线', '新一线', '二线', '三线', '四线', '五线'];
 const EVIDENCE = ['充分', '部分', '几乎没有'];
 const GRADES = ['1级', '2级', '3级', '4级', '5级', '6级', '7级', '8级', '9级', '10级'];

@@ -3,14 +3,11 @@ import { View, Text, Input, Picker, Switch, Button } from '@tarojs/components';
 import { estimateInpatient, buildMedicalPrompt, loadLastProfile } from '../../core';
 import { taroStorage } from '../../utils/storage';
 import { useDidShow } from '@tarojs/taro';
+import { fmtNum } from '../../utils/format';
 import PromptCard from '../../components/PromptCard';
 import SmartNote from '../../components/SmartNote';
 import './index.scss';
 
-const fmtNum = (n: number): string => {
-  const neg = n < 0;
-  return (neg ? '-' : '') + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
 const IDENTITY = ['职工', '居民'];
 const REMOTE = ['本地就医', '异地已备案', '异地未备案'];
 const REMOTE_KEY = ['none', 'filed', 'unfiled'];

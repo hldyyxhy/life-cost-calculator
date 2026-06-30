@@ -4,10 +4,6 @@ import { metricsFrom, loadLastProfile } from '../../core';
 import { taroStorage } from '../../utils/storage';
 import './index.scss';
 
-const fmtNum = (n: number): string => {
-  const neg = n < 0;
-  return (neg ? '-' : '') + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
 const TRACK_KEY = 'tracking_snapshots';
 const fmtTime = (d: Date): string => {
   const p = (n: number) => String(n).padStart(2, '0');

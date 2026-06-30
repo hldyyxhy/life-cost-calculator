@@ -8,14 +8,10 @@ import {
 import { taroStorage } from '../../utils/storage';
 import SubTabs from '../../components/SubTabs';
 import SmartNote from '../../components/SmartNote';
+import { fmtNum } from '../../utils/format';
 import PromptCard from '../../components/PromptCard';
 import './index.scss';
 
-const fmtNum = (n: number): string => {
-  if (n === null || n === undefined) return '—';
-  const neg = n < 0;
-  return (neg ? '-' : '') + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
 const fmtDiff = (a: number, b: number): string => {
   const d = b - a;
   if (d === 0) return '—';

@@ -4,6 +4,7 @@ import Taro, { useDidShow } from '@tarojs/taro';
 import { computeCurrentSituation, loadLastProfile, buildCurrentSituationPrompt, buildFullReport } from '../../core';
 import { taroStorage } from '../../utils/storage';
 import SmartNote from '../../components/SmartNote';
+import { fmtNum } from '../../utils/format';
 import PromptCard from '../../components/PromptCard';
 import './index.scss';
 
@@ -12,10 +13,6 @@ const HOUSINGS = ['合租单间', '一居室整租', '已购房（还月供）',
 const FOODS = ['节俭', '普通', '宽裕'];
 const INSURANCES = ['在职（单位缴）', '灵活就业（全自缴）', '不缴社保'];
 
-const fmtNum = (n: number): string => {
-  const neg = n < 0;
-  return (neg ? '-' : '') + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
 
 export default function SituationPage() {
   const [age, setAge] = useState('30');

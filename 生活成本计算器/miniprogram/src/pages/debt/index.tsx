@@ -5,15 +5,11 @@ import {
   buildLoanAprPrompt, buildAffordableDebtPrompt, buildDebtPayoffPrompt, buildSpiralPrompt, buildDebtHealthPrompt,
 } from '../../core';
 import SubTabs from '../../components/SubTabs';
+import { fmtNum } from '../../utils/format';
 import PromptCard from '../../components/PromptCard';
 import SmartNote from '../../components/SmartNote';
 import './index.scss';
 
-const fmtNum = (n: number): string => {
-  if (n === null || n === undefined) return '—';
-  const neg = n < 0;
-  return (neg ? '-' : '') + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
 const lc = (l: string) => (l === '正常' ? 'good' : l === '偏高' ? 'warn' : 'bad');
 const TABS = ['①真实年化', '②可承受', '③雪球雪崩', '④以贷养贷', '⑤债务健康'];
 const METHODS = ['雪球法（先还小额）', '雪崩法（先还高息）'];

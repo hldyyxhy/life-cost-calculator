@@ -4,14 +4,11 @@ import { useDidShow } from '@tarojs/taro';
 import { cityFactor, computeLifeCost, computeSurplus, buildMilestonesPrompt, loadLastProfile } from '../../core';
 import { taroStorage } from '../../utils/storage';
 import costData from '../../core/data/cost.json';
+import { fmtNum } from '../../utils/format';
 import PromptCard from '../../components/PromptCard';
 import SmartNote from '../../components/SmartNote';
 import './index.scss';
 
-const fmtNum = (n: number): string => {
-  const neg = n < 0;
-  return (neg ? '-' : '') + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
 const TIERS = ['一线', '新一线', '二线', '三线', '四线', '五线'];
 const LEVELS = ['普惠', '中产', '高端'];
 const CARE_MODES = ['居家养老', '普惠养老机构', '中高端养老机构'];

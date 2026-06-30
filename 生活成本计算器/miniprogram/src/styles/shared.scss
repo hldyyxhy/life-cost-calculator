@@ -1,0 +1,42 @@
+// shared.scss —— 各计算页通用样式（从各页 scss 抽取，消除 ~60% 重复）
+// 各页 scss 用 @import 'vars'; @import 'shared'; 引入
+
+.page { padding: 24px 24px 48px; }
+.header { display: flex; align-items: center; padding: 8px 4px 20px;
+  .header-title { font-size: 36px; font-weight: 700; color: $color-text; }
+  .header-link { font-size: 26px; color: $color-primary; } }
+
+.card { background: $color-card; border-radius: 20px; padding: 32px 28px; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(232,132,60,0.06); }
+.card.calc { background: $color-card; border-radius: 20px; padding: 32px 28px; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(232,132,60,0.06); }
+.calc-title { font-size: 32px; font-weight: 600; color: $color-text; margin-bottom: 8px; }
+.calc-desc { font-size: 24px; color: $color-text-muted; line-height: 1.6; margin-bottom: 20px; }
+
+.input-row { display: flex; align-items: center; padding: 18px 0; border-bottom: 1px solid $color-border;
+  .label { width: 178px; color: $color-text-muted; font-size: 28px; }
+  .input { flex: 1; font-size: 30px; color: $color-text; text-align: right; }
+  .unit { color: $color-text-muted; margin-left: 12px; font-size: 24px; }
+  .picker { flex: 1; font-size: 30px; color: $color-text; text-align: right; } }
+
+.btn-primary { margin-top: 28px; background: $color-primary; color: #fff; border-radius: 48px; font-size: 32px; border: none;
+  &::after { border: none; } }
+.btn-ask { margin-top: 16px; background: transparent; color: $color-primary; border: 1px solid $color-primary; border-radius: 48px; font-size: 28px;
+  &::after { border: none; } }
+.btn-ask { &:active { opacity: 0.7; } }
+.btn-primary { &:active { opacity: 0.7; } }
+
+.result-box { margin-top: 24px; }
+.big-line { text-align: center; margin: 16px 0; font-size: 28px; color: $color-text-muted;
+  .rate { font-size: 48px; font-weight: 700; margin: 0 8px; }
+  .rate.good { color: $color-good; } .rate.warn { color: $color-primary; } .rate.bad { color: $color-accent; }
+  .rate-tag { font-size: 24px; padding: 4px 16px; border-radius: 20px; margin-left: 8px; }
+  .tag.good { background: rgba(91,168,100,0.12); color: $color-good; }
+  .tag.warn { background: rgba(232,163,60,0.12); color: $color-warn; }
+  .tag.bad { background: rgba(217,83,79,0.12); color: $color-accent; } }
+.info-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid $color-border;
+  &:last-child { border-bottom: none; }
+  .info-label { color: $color-text-muted; }
+  .info-val { color: $color-text; }
+  .info-val.strong { color: $color-primary; font-weight: 600; font-size: 32px; } }
+.note { font-size: 24px; color: $color-text; line-height: 1.7; margin-top: 16px; }
+.detail-title { font-size: 30px; font-weight: 600; color: $color-text; margin-bottom: 12px; }
+.error { color: $color-accent; text-align: center; margin-top: 16px; font-size: 26px; }
