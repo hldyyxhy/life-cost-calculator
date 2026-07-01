@@ -1,20 +1,48 @@
 @import '../../styles/vars';
+@import '../../styles/shared';
 
-.page { padding: 24px 24px 48px; }
-.header { display: flex; align-items: center; padding: 8px 4px 20px;
-  .header-title { font-size: 36px; font-weight: 700; color: $color-text; } }
-.card { background: $color-card; border-radius: 20px; padding: 32px 28px; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(232,132,60,0.06); }
-.calc-title { font-size: 32px; font-weight: 600; color: $color-text; margin-bottom: 8px; }
-.calc-desc { font-size: 24px; color: $color-text-muted; line-height: 1.6; margin-bottom: 20px; }
-.btn-primary { margin-top: 12px; background: $color-primary; color: #fff; border-radius: 48px; font-size: 32px; border: none;
+/* 趋势柱状图 */
+.trend-scroll { width: 100%; overflow-x: auto; white-space: nowrap; }
+.trend-chart { display: inline-flex; align-items: flex-end; gap: 16px; height: 280px; padding: 20px 8px; min-width: 100%; }
+.bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 70px; flex-shrink: 0; }
+.bar-val { font-size: 20px; margin-bottom: 8px; white-space: nowrap;
+  &.pos { color: $color-good; } &.neg { color: $color-accent; } }
+.bar-fill { width: 72%; min-height: 8px; border-radius: 8px 8px 0 0; transition: height 0.3s ease;
+  &.pos { background: linear-gradient(to top, $color-good, rgba($color-good, 0.5)); }
+  &.neg { background: linear-gradient(to top, $color-accent, rgba($color-accent, 0.5)); } }
+.bar-label { font-size: 20px; color: $color-text-muted; margin-top: 8px; }
+
+/* 快照卡片 */
+.snap-card { padding: 0; overflow: hidden; }
+.snap-header { display: flex; align-items: center; justify-content: space-between; padding: 28px;
+  &:active { opacity: 0.7; } }
+.snap-info { flex: 1; }
+.snap-name { display: block; font-size: 28px; font-weight: 600; color: $color-text; }
+.snap-time { display: block; font-size: 22px; color: $color-text-muted; margin-top: 4px; }
+.snap-summary { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.snap-surplus { font-size: 28px; font-weight: 700; &.pos { color: $color-good; } &.neg { color: $color-accent; } }
+.snap-rate { font-size: 22px; color: $color-text-muted; }
+.snap-arrow { font-size: 24px; color: $color-text-muted; margin-top: 4px; }
+
+/* 收起时快速指标 */
+.snap-quick { display: flex; gap: 16px; padding: 0 28px 20px; flex-wrap: wrap; }
+.quick-item { font-size: 22px; color: $color-text-muted; }
+
+/* 展开详情 */
+.snap-detail { padding: 0 28px 24px; }
+.snap-metrics { display: flex; flex-wrap: wrap; gap: 0; border-top: 1px solid $color-border; }
+.snap-metric { width: 50%; padding: 16px 0; border-bottom: 1px solid $color-border;
+  .m-label { display: block; font-size: 22px; color: $color-text-muted; }
+  .m-val { display: block; font-size: 28px; font-weight: 600; color: $color-text; margin-top: 4px;
+    &.pos { color: $color-good; } &.neg { color: $color-accent; } } }
+.snap-profile { margin-top: 16px; }
+.sp-title { display: block; font-size: 24px; font-weight: 600; color: $color-text-muted; margin-bottom: 8px; }
+.sp-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid $color-border;
+  &:last-child { border-bottom: none; }
+  .sp-label { color: $color-text-muted; font-size: 24px; }
+  .sp-val { color: $color-text; font-size: 24px; } }
+.btn-delete { margin-top: 16px; background: transparent; color: $color-accent; border: 1px solid rgba(217,83,79,0.3); border-radius: 40px; font-size: 26px;
+  &::after { border: none; }
+  &:active { opacity: 0.6; } }
+.btn-clear { margin-top: 16px; background: transparent; color: $color-text-muted; font-size: 24px; border: none;
   &::after { border: none; } }
-.btn-clear { margin-top: 24px; background: transparent; color: $color-text-muted; font-size: 26px; border: none;
-  &::after { border: none; } }
-.snap { padding: 20px 0; border-bottom: 1px solid $color-border;
-  &:last-of-type { border-bottom: none; }
-  .snap-time { display: block; font-size: 24px; color: $color-text-muted; margin-bottom: 12px; } }
-.snap-grid { display: flex; flex-wrap: wrap;
-  .snap-cell { width: 50%; padding: 8px 0;
-    .snap-k { display: block; font-size: 22px; color: $color-text-muted; }
-    .snap-v { display: block; font-size: 30px; font-weight: 600; color: $color-text; margin-top: 4px;
-      &.good { color: $color-good; } &.bad { color: $color-accent; } } } }
