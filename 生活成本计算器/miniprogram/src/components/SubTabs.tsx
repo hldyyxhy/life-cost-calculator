@@ -7,6 +7,9 @@ export default function SubTabs({ tabs, current, onChange }: { tabs: string[]; c
   // 解决 ScrollView 重渲染 scrollLeft 重置到 0 的平台行为
   const [scrollLeft, setScrollLeft] = useState(0);
 
+  // tab 数 ≤4 时不显示右滑提示（4 个能放下，不需要拖动）
+  const showHint = tabs.length > 4;
+
   return (
     <View className="sub-tabs-wrap">
       <ScrollView
@@ -15,7 +18,6 @@ export default function SubTabs({ tabs, current, onChange }: { tabs: string[]; c
         scrollWithAnimation={false}
         onScroll={(e) => {
           const left = e.detail.scrollLeft;
-          // 阈值节流，避免高频 setState
           if (Math.abs(left - scrollLeft) > 3) setScrollLeft(left);
         }}
         className="sub-tabs"
@@ -28,7 +30,7 @@ export default function SubTabs({ tabs, current, onChange }: { tabs: string[]; c
           </View>
         ))}
       </ScrollView>
-      <View className="sub-tabs-hint">›</View>
+      {showHint && <View className="sub-tabs-hint">›</View>}
     </View>
   );
 }
