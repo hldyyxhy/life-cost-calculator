@@ -1,6 +1,33 @@
 # 更新日志（CHANGELOG）
 
-> 版本号对应 `dist/生活成本计算器.exe` 的文件版本（右键属性→详细信息可查）。
+> Python 桌面版版本号对应 `dist/生活成本计算器.exe`；TS 核心和小程序见各自目录。
+
+---
+
+## TS 核心 + 微信小程序 — 2026-06-27 ~ 07-01
+
+### TS 核心（core/）
+- **100% 翻译完成**：Python `calc_engine`（2594行/56函数）+ 4 数据模块 + profile/tracking/report 全量翻译
+- **93/93 交叉验证全绿**：Python↔JS 浮点运算（**/累加/math.log）精确一致
+- **平台无关**：ProfileStorage 抽象（UI 注入 wx.setStorageSync / localStorage），core 不依赖任何平台 API
+- 数据导出（export_data.py）+ 黄金基准（dump_baselines.py）+ 容差策略（金额≤1元/interpretation 文本严格相等）
+
+### 微信小程序（miniprogram/）
+- **Taro 4 + React + TS + 暖色设计**，10 页全功能：
+  - 档案（首次向导 7 步 + 6 组折叠 + 城市自动匹配）
+  - 处境（成本横条图 + overrides 按实际改 + SmartNote 智能着色 + 完整报告联动）
+  - 城市与住房（7 行对比表 + 分项明细 + 智能着色变化 + 买vs租 + 公积金 + 利率压力）
+  - 三座山（结婚/养娃/养老独立计算，共享城市+月薪）
+  - 借贷真相（5 tab：真实年化/可承受/雪球雪崩动态债务/以贷养贷/债务健康）
+  - 劳动权益（7 tab：加班费/最低工资/维权/失业金/工伤/4050/个税）
+  - 求助与反诈（场景按钮墙 + 问 AI 提示词弹窗 + 复制）
+  - 医保就医（住院报销估算 + 异地调整）
+  - 长期跟踪（趋势柱状图 + 快照展开/删除/完整档案）
+  - 关于（工具箱 + 数据说明）
+- **核心特性**：22 个 build_*_prompt 全接入 + PromptCard 弹窗复制 + SmartNote/RichNote 富文本着色 + SubTabs 分页 + 全 9 页分享 + wx storage 持久化
+- **踩坑记录**（详见记忆 miniprogram-ui）：taro init 卡死手建/webpack 5.91.0/legacy-peer-de-deps/core 外部不编译→复制 src/core/（chunk 时序全崩→barrel 正常）/开发者工具缓存/box-sizing/app-origin.wxss/ScrollView scrollLeft 重置/CSS overflow 小程序不支持
+
+---
 
 ---
 
