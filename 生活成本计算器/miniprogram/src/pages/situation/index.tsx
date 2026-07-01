@@ -153,7 +153,9 @@ export default function SituationPage() {
             const prof = loadLastProfile(taroStorage) || {};
             const cmpStr = taroStorage.getItem('last_result_compare');
             const cmpResult = cmpStr ? JSON.parse(cmpStr) : null;
-            setReport(buildFullReport(prof, result, cmpResult, null));
+            const msStr = taroStorage.getItem('last_result_milestones');
+            const msResult = msStr ? JSON.parse(msStr) : null;
+            setReport(buildFullReport(prof, result, cmpResult, msResult));
           }}>📋 生成完整报告</Button>
           <PromptCard prompt={prompt} />
           <PromptCard prompt={report} title="完整报告（可复制保存）" />

@@ -3,8 +3,8 @@ import { View, Text, Input, Picker, Button } from '@tarojs/components';
 import { useDidShow } from '@tarojs/taro';
 import { cityFactor, computeLifeCost, computeSurplus, buildMilestonesPrompt, loadLastProfile } from '../../core';
 import { taroStorage } from '../../utils/storage';
-import costData from '../../core/data/cost.json';
 import { fmtNum } from '../../utils/format';
+import costData from '../../core/data/cost.json';
 import PromptCard from '../../components/PromptCard';
 import SmartNote from '../../components/SmartNote';
 import './index.scss';
@@ -36,6 +36,23 @@ export default function MilestonesPage() {
   // 问 AI
   const [prompt, setPrompt] = useState('');
 
+  // 把三座山结果组装成 ms 文本存 storage（供处境页报告联动读取）
+  const saveMsToStorage = () => {
+    const ms: any = {};
+    if (marriage) {
+      ms.marriage = `合计 ${fmtNum(marriage.total)} 元。${marriage.years < 0 ? '入不敷出' : marriage.years >= 100 ? '几乎不可能攒够' : `按月结余 ${fmtNum(marriage.ms)} 元需攒约 ${Math.round(marriage.years)} 年`}`;
+    }
+    if (child) {
+      ms.child = `0-22岁累计 ${fmtNum(child.total)} 元，折合月支出 ${fmtNum(child.monthly)} 元。${child.ratio < 0 ? '目前无结余' : child.ratio > 100 ? `占月结余 ${child.ratio.toFixed(0)}%，超过全部结余` : `占月结余 ${child.ratio.toFixed(0)}%`}`;
+    }
+    if (retire) {
+      ms.retire = `退休金 ${fmtNum(retire.pension)} 元/月，支出 ${fmtNum(retire.care)} 元/月，${retire.gap >= 0 ? '无缺口' : `每月缺口 ${fmtNum(-retire.gap)} 元`}。`;
+    }
+    if (Object.keys(ms).length > 0) {
+      taroStorage.setItem('last_result_milestones', JSON.stringify(ms));
+    }
+  };
+
   // 从档案预填
   useDidShow(() => {
     const p = loadLastProfile(taroStorage);
@@ -60,6 +77,7 @@ export default function MilestonesPage() {
     const ms = monthlySurplus();
     const years = ms > 0 ? total / (ms * 12) : -1;
     setMarriage({ bride, wedding, house, total, hp, years, ms });
+    setTimeout(saveMsToStorage, 100);
   };
 
   // 养娃
@@ -71,6 +89,7 @@ export default function MilestonesPage() {
     const ms = monthlySurplus();
     const ratio = ms > 0 ? (monthly / ms) * 100 : -1;
     setChild({ total: eduTotal, annual, monthly, ms, ratio });
+    setTimeout(saveMsToStorage, 100);
   };
 
   // 养老
@@ -82,6 +101,7 @@ export default function MilestonesPage() {
     const gap = pension - care;
     const totalGap = gap < 0 ? -gap * 12 * years : 0;
     setRetire({ pension, care, gap, years, ra, totalGap });
+    setTimeout(saveMsToStorage, 100);
   };
 
   return (

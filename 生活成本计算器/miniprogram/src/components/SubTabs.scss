@@ -3,8 +3,8 @@
 .sub-tabs-wrap { position: relative; margin-bottom: 16px; }
 /* ScrollView 横向滚动：white-space:nowrap 让 inline-block 子元素撑开 */
 .sub-tabs { white-space: nowrap; padding: 0 8px; }
-.sub-tab { display: inline-block; padding: 14px 28px; margin: 0 6px; border-radius: 24px; background: $color-card; transition: background 0.2s ease, transform 0.1s ease;
-  &.active { background: $color-primary; }
+.sub-tab { display: inline-block; padding: 14px 28px; margin: 0 6px; border-radius: 24px; background: $color-card; transition: background 0.2s ease, transform 0.1s ease; border-bottom: 4rpx solid transparent;
+  &.active { background: $color-primary; border-bottom-color: darken($color-primary, 15%); }
   &:active { transform: scale(0.95); }
   .sub-tab-text { font-size: 26px; color: $color-text-muted; } }
 .sub-tab.active .sub-tab-text { color: #fff; }
