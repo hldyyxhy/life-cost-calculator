@@ -26,8 +26,11 @@ export default function DebtPage() {
   const [aprPct, setAprPct] = useState('18');
   const [periods2, setPeriods2] = useState('24');
   const [aff, setAff] = useState<any>(null);
-  const [d1b, setD1b] = useState('3000'); const [d1r, setD1r] = useState('18'); const [d1m, setD1m] = useState('300');
-  const [d2b, setD2b] = useState('10000'); const [d2r, setD2r] = useState('36'); const [d2m, setD2m] = useState('500');
+  const [debts, setDebts] = useState([
+    { balance: '3000', rate: '18', minMonthly: '300' },
+    { balance: '10000', rate: '36', minMonthly: '500' },
+  ]);
+  const [collapsedDebts, setCollapsedDebts] = useState<Set<number>>(new Set());
   const [methodIdx, setMethodIdx] = useState(1);
   const [extra, setExtra] = useState('500');
   const [payoff, setPayoff] = useState<any>(null);
@@ -41,6 +44,19 @@ export default function DebtPage() {
   const [monthlyPay, setMonthlyPay] = useState('2000');
   const [healthApr, setHealthApr] = useState('18');
   const [health, setHealth] = useState<any>(null);
+
+  // 雪球雪崩：动态债务列表操作
+  const updateDebt = (idx: number, field: string, val: string) => {
+    const next = [...debts]; next[idx] = { ...next[idx], [field]: val }; setDebts(next);
+  };
+  const addDebt = () => { setDebts([...debts, { balance: '', rate: '', minMonthly: '' }]); };
+  const removeDebt = (idx: number) => { setDebts(debts.filter((_, i) => i !== idx)); };
+  const toggleDebt = (idx: number) => {
+    const next = new Set(collapsedDebts);
+    if (next.has(idx)) next.delete(idx); else next.add(idx);
+    setCollapsedDebts(next);
+  };
+  const buildDebtsDesc = () => debts.map((d, i) => `债${i + 1}: ${d.balance}元/${d.rate}%/月还${d.minMonthly}`).join('\n');
 
   return (
     <View className="page">
@@ -90,20 +106,37 @@ export default function DebtPage() {
         <View className="card calc">
           <View className="calc-title">多笔债怎么还最快</View>
           <View className="calc-desc">输入你的债，模拟两种还法，看哪种省利息。</View>
-          <View className="input-row"><Text className="label">债1 余额</Text><Input className="input" type="digit" value={d1b} onInput={(e) => setD1b(e.detail.value)} /><Text className="unit">元</Text></View>
-          <View className="input-row"><Text className="label">债1 年化</Text><Input className="input" type="digit" value={d1r} onInput={(e) => setD1r(e.detail.value)} /><Text className="unit">%</Text></View>
-          <View className="input-row"><Text className="label">债1 月还</Text><Input className="input" type="digit" value={d1m} onInput={(e) => setD1m(e.detail.value)} /><Text className="unit">元</Text></View>
-          <View className="input-row"><Text className="label">债2 余额</Text><Input className="input" type="digit" value={d2b} onInput={(e) => setD2b(e.detail.value)} /><Text className="unit">元</Text></View>
-          <View className="input-row"><Text className="label">债2 年化</Text><Input className="input" type="digit" value={d2r} onInput={(e) => setD2r(e.detail.value)} /><Text className="unit">%</Text></View>
-          <View className="input-row"><Text className="label">债2 月还</Text><Input className="input" type="digit" value={d2m} onInput={(e) => setD2m(e.detail.value)} /><Text className="unit">元</Text></View>
+
+          {debts.map((d, idx) => {
+            const isCollapsed = collapsedDebts.has(idx) && !!d.balance;
+            return (
+              <View className="debt-block" key={idx}>
+                <View className="debt-header" onClick={() => toggleDebt(idx)}>
+                  <Text className="debt-label">债{idx + 1}</Text>
+                  <Text className="debt-summary">{d.balance ? `${fmtNum(Number(d.balance))} 元` : '点击填写'}</Text>
+                  <Text className="debt-arrow">{isCollapsed ? '▶' : '▼'}</Text>
+                  {debts.length > 1 && <Text className="debt-del" onClick={(e) => { e.stopPropagation(); removeDebt(idx); }}>✕</Text>}
+                </View>
+                {!isCollapsed && (
+                  <View>
+                    <View className="input-row"><Text className="label">余额</Text><Input className="input" type="digit" value={d.balance} onInput={(e) => updateDebt(idx, 'balance', e.detail.value)} /><Text className="unit">元</Text></View>
+                    <View className="input-row"><Text className="label">年化</Text><Input className="input" type="digit" value={d.rate} onInput={(e) => updateDebt(idx, 'rate', e.detail.value)} /><Text className="unit">%</Text></View>
+                    <View className="input-row"><Text className="label">月还</Text><Input className="input" type="digit" value={d.minMonthly} onInput={(e) => updateDebt(idx, 'minMonthly', e.detail.value)} /><Text className="unit">元</Text></View>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+
+          <Button className="btn-add-debt" onClick={addDebt}>+ 添加一笔债</Button>
           <View className="input-row"><Text className="label">每月额外</Text><Input className="input" type="digit" value={extra} onInput={(e) => setExtra(e.detail.value)} /><Text className="unit">元</Text></View>
           <View className="input-row"><Text className="label">还法</Text><Picker mode="selector" range={METHODS} value={methodIdx} onChange={(e) => setMethodIdx(Number(e.detail.value))}><View className="picker">{METHODS[methodIdx]}</View></Picker></View>
           <Button className="btn-primary" onClick={() => {
-            const debts = [
-              { name: '债1', balance: Number(d1b) || 0, annual_rate: (Number(d1r) || 0) / 100, min_monthly: Number(d1m) || 0 },
-              { name: '债2', balance: Number(d2b) || 0, annual_rate: (Number(d2r) || 0) / 100, min_monthly: Number(d2m) || 0 },
-            ].filter((d) => d.balance > 0);
-            setPayoff(simulateDebtPayoff(debts, MK[methodIdx], Number(extra) || 0)); setPrompt('');
+            const debtsData = debts.map((d, i) => ({
+              name: `债${i + 1}`, balance: Number(d.balance) || 0,
+              annual_rate: (Number(d.rate) || 0) / 100, min_monthly: Number(d.minMonthly) || 0,
+            })).filter((d) => d.balance > 0);
+            setPayoff(simulateDebtPayoff(debtsData, MK[methodIdx], Number(extra) || 0)); setPrompt('');
           }}>模拟还清</Button>
           {payoff && !payoff.error && (
             <View className="result-box">
@@ -117,7 +150,7 @@ export default function DebtPage() {
                 </>
               )}
               <SmartNote text={payoff.note} />
-              <Button className="btn-ask" onClick={() => setPrompt(buildDebtPayoffPrompt(`债1: ${d1b}元/${d1r}%/月还${d1m}\n债2: ${d2b}元/${d2r}%/月还${d2m}`, Number(extra) || 0))}>问 AI</Button>
+              <Button className="btn-ask" onClick={() => setPrompt(buildDebtPayoffPrompt(buildDebtsDesc(), Number(extra) || 0))}>问 AI</Button>
             </View>
           )}
         </View>
