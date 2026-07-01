@@ -5,6 +5,7 @@ import { HELP_SCENARIOS, FRAUD_TYPES, buildHelpPrompt, buildAntifraudPrompt } fr
 import './index.scss';
 
 export default function HelpPage() {
+  useShareAppMessage(() => ({ title: '生活成本计算器——看清你的钱花哪了', path: '/pages/situation/index' }));
   const [prompt, setPrompt] = useState('');
 
   const onHelp = (key: string) => setPrompt(buildHelpPrompt(key, ''));

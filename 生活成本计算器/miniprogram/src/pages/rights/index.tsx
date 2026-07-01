@@ -13,6 +13,7 @@ import {
 import SubTabs from '../../components/SubTabs';
 import SmartNote from '../../components/SmartNote';
 import { fmtNum } from '../../utils/format';
+import { useShareAppMessage } from '@tarojs/taro';
 import PromptCard from '../../components/PromptCard';
 import './index.scss';
 
@@ -22,6 +23,7 @@ const GRADES = ['1级', '2级', '3级', '4级', '5级', '6级', '7级', '8级', 
 const TABS = ['①加班费', '②最低工资', '③维权', '④失业金', '⑤工伤', '⑥4050', '⑦个税'];
 
 export default function RightsPage() {
+  useShareAppMessage(() => ({ title: '生活成本计算器——看清你的钱花哪了', path: '/pages/situation/index' }));
   const [tab, setTab] = useState(0);
   const [prompt, setPrompt] = useState('');
   const [otWage, setOtWage] = useState('6000'); const [wd, setWd] = useState('40'); const [we, setWe] = useState('16'); const [ho, setHo] = useState('8');

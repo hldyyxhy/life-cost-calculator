@@ -4,6 +4,7 @@ import { estimateInpatient, buildMedicalPrompt, loadLastProfile } from '../../co
 import { taroStorage } from '../../utils/storage';
 import { useDidShow } from '@tarojs/taro';
 import { fmtNum } from '../../utils/format';
+import { useShareAppMessage } from '@tarojs/taro';
 import PromptCard from '../../components/PromptCard';
 import SmartNote from '../../components/SmartNote';
 import './index.scss';
@@ -13,6 +14,7 @@ const REMOTE = ['本地就医', '异地已备案', '异地未备案'];
 const REMOTE_KEY = ['none', 'filed', 'unfiled'];
 
 export default function MedicalPage() {
+  useShareAppMessage(() => ({ title: '生活成本计算器——看清你的钱花哪了', path: '/pages/situation/index' }));
   const [city, setCity] = useState('广州');
   const [idIdx, setIdIdx] = useState(0);
   const [cost, setCost] = useState('50000');

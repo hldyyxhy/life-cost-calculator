@@ -10,6 +10,7 @@ import SubTabs from '../../components/SubTabs';
 import SmartNote from '../../components/SmartNote';
 import RichNote from '../../components/RichNote';
 import { fmtNum } from '../../utils/format';
+import { useShareAppMessage } from '@tarojs/taro';
 import PromptCard from '../../components/PromptCard';
 import './index.scss';
 
@@ -25,6 +26,7 @@ const INSURANCES = ['在职（单位缴）', '灵活就业（全自缴）', '不
 const TABS = ['①城市对比', '②买vs租', '③公积金', '④利率压力'];
 
 export default function ComparePage() {
+  useShareAppMessage(() => ({ title: '生活成本计算器——看清你的钱花哪了', path: '/pages/situation/index' }));
   const [tab, setTab] = useState(0);
   const [prompt, setPrompt] = useState('');
 

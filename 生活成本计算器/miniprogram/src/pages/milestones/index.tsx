@@ -5,6 +5,7 @@ import { cityFactor, computeLifeCost, computeSurplus, buildMilestonesPrompt, loa
 import { taroStorage } from '../../utils/storage';
 import { fmtNum } from '../../utils/format';
 import costData from '../../core/data/cost.json';
+import { useShareAppMessage } from '@tarojs/taro';
 import PromptCard from '../../components/PromptCard';
 import SmartNote from '../../components/SmartNote';
 import './index.scss';
@@ -20,6 +21,7 @@ const CARE_MAP: Record<string, string> = {
 const C = costData as any;
 
 export default function MilestonesPage() {
+  useShareAppMessage(() => ({ title: '生活成本计算器——看清你的钱花哪了', path: '/pages/situation/index' }));
   // 公共输入
   const [tierIdx, setTierIdx] = useState(2);
   const [wage, setWage] = useState('5000');

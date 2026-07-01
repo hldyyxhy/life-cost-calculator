@@ -6,6 +6,7 @@ import {
 } from '../../core';
 import SubTabs from '../../components/SubTabs';
 import { fmtNum } from '../../utils/format';
+import { useShareAppMessage } from '@tarojs/taro';
 import PromptCard from '../../components/PromptCard';
 import SmartNote from '../../components/SmartNote';
 import './index.scss';
@@ -16,6 +17,7 @@ const METHODS = ['雪球法（先还小额）', '雪崩法（先还高息）'];
 const MK = ['snowball', 'avalanche'];
 
 export default function DebtPage() {
+  useShareAppMessage(() => ({ title: '生活成本计算器——看清你的钱花哪了', path: '/pages/situation/index' }));
   const [tab, setTab] = useState(0);
   const [prompt, setPrompt] = useState('');
   const [principal, setPrincipal] = useState('10000');

@@ -33,6 +33,7 @@ const PROFILE_FIELDS: [string, string][] = [
 ];
 
 export default function TrackingPage() {
+  useShareAppMessage(() => ({ title: '生活成本计算器——看清你的钱花哪了', path: '/pages/situation/index' }));
   const [snaps, setSnaps] = useState<Snap[]>(loadSnaps());
   const [expanded, setExpanded] = useState<number | null>(null);
 
