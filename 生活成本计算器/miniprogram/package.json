@@ -2,7 +2,7 @@
   "name": "shenghuo-miniprogram",
   "version": "1.0.0",
   "private": true,
-  "sideEffects": false,
+  "sideEffects": ["*.scss", "*.css", "*.sass"],
   "description": "生活成本计算器小程序（Taro4 + React + TS，复用 core）",
   "scripts": {
     "build:weapp": "taro build --type weapp && node scripts/post-build.js",
