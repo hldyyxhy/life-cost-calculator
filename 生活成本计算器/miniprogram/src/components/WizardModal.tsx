@@ -14,7 +14,7 @@ function findDef(key: string): any {
   return null;
 }
 
-export default function WizardModal({ onComplete }: { onComplete: (profile: any) => void }) {
+export default function WizardModal({ onComplete, onSkip }: { onComplete: (profile: any) => void; onSkip?: () => void }) {
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<any>(defaultProfile());
 
@@ -114,6 +114,7 @@ export default function WizardModal({ onComplete }: { onComplete: (profile: any)
             <Button className="wz-btn-next" onClick={() => setStep(step + 1)}>下一步</Button>
           )}
         </View>
+        {step === 0 && onSkip && <Text className="wz-skip-link" onClick={onSkip}>以后再说，先看看</Text>}
       </View>
     </View>
   );

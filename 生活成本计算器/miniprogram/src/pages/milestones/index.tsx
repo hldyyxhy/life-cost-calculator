@@ -39,16 +39,17 @@ export default function MilestonesPage() {
   const [prompt, setPrompt] = useState('');
 
   // 把三座山结果组装成 ms 文本存 storage（供处境页报告联动读取）
-  const saveMsToStorage = () => {
+  // 接收显式参数避免闭包竞态（不再用 setTimeout）
+  const saveMsToStorage = (m: any, c: any, r: any) => {
     const ms: any = {};
-    if (marriage) {
-      ms.marriage = `合计 ${fmtNum(marriage.total)} 元。${marriage.years < 0 ? '入不敷出' : marriage.years >= 100 ? '几乎不可能攒够' : `按月结余 ${fmtNum(marriage.ms)} 元需攒约 ${Math.round(marriage.years)} 年`}`;
+    if (m) {
+      ms.marriage = `合计 ${fmtNum(m.total)} 元。${m.years < 0 ? '入不敷出' : m.years >= 100 ? '几乎不可能攒够' : `按月结余 ${fmtNum(m.ms)} 元需攒约 ${Math.round(m.years)} 年`}`;
     }
-    if (child) {
-      ms.child = `0-22岁累计 ${fmtNum(child.total)} 元，折合月支出 ${fmtNum(child.monthly)} 元。${child.ratio < 0 ? '目前无结余' : child.ratio > 100 ? `占月结余 ${child.ratio.toFixed(0)}%，超过全部结余` : `占月结余 ${child.ratio.toFixed(0)}%`}`;
+    if (c) {
+      ms.child = `0-22岁累计 ${fmtNum(c.total)} 元，折合月支出 ${fmtNum(c.monthly)} 元。${c.ratio < 0 ? '目前无结余' : c.ratio > 100 ? `占月结余 ${c.ratio.toFixed(0)}%，超过全部结余` : `占月结余 ${c.ratio.toFixed(0)}%`}`;
     }
-    if (retire) {
-      ms.retire = `退休金 ${fmtNum(retire.pension)} 元/月，支出 ${fmtNum(retire.care)} 元/月，${retire.gap >= 0 ? '无缺口' : `每月缺口 ${fmtNum(-retire.gap)} 元`}。`;
+    if (r) {
+      ms.retire = `退休金 ${fmtNum(r.pension)} 元/月，支出 ${fmtNum(r.care)} 元/月，${r.gap >= 0 ? '无缺口' : `每月缺口 ${fmtNum(-r.gap)} 元`}。`;
     }
     if (Object.keys(ms).length > 0) {
       taroStorage.setItem('last_result_milestones', JSON.stringify(ms));
@@ -78,8 +79,9 @@ export default function MilestonesPage() {
     const total = bride + wedding + house;
     const ms = monthlySurplus();
     const years = ms > 0 ? total / (ms * 12) : -1;
-    setMarriage({ bride, wedding, house, total, hp, years, ms });
-    setTimeout(saveMsToStorage, 100);
+    const newMarriage = { bride, wedding, house, total, hp, years, ms };
+    setMarriage(newMarriage);
+    saveMsToStorage(newMarriage, child, retire);
   };
 
   // 养娃
@@ -90,8 +92,9 @@ export default function MilestonesPage() {
     const monthly = eduTotal / (22 * 12);
     const ms = monthlySurplus();
     const ratio = ms > 0 ? (monthly / ms) * 100 : -1;
-    setChild({ total: eduTotal, annual, monthly, ms, ratio });
-    setTimeout(saveMsToStorage, 100);
+    const newChild = { total: eduTotal, annual, monthly, ms, ratio };
+    setChild(newChild);
+    saveMsToStorage(marriage, newChild, retire);
   };
 
   // 养老
@@ -102,8 +105,9 @@ export default function MilestonesPage() {
     const care = C.RETIREMENT['care_monthly'][CARE_MAP[CARE_MODES[careIdx]]][tier];
     const gap = pension - care;
     const totalGap = gap < 0 ? -gap * 12 * years : 0;
-    setRetire({ pension, care, gap, years, ra, totalGap });
-    setTimeout(saveMsToStorage, 100);
+    const newRetire = { pension, care, gap, years, ra, totalGap };
+    setRetire(newRetire);
+    saveMsToStorage(marriage, child, newRetire);
   };
 
   return (

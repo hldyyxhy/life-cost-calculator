@@ -118,7 +118,7 @@ export default function ProfilePage() {
       <View className="hint">填一次档案，各计算页都会自动带入了。城市等级按城市名自动匹配。</View>
 
       {/* 首次启动向导 */}
-      {showWizard && <WizardModal onComplete={onWizardComplete} />}
+      {showWizard && <WizardModal onComplete={onWizardComplete} onSkip={() => setShowWizard(false)} />}
     </View>
   );
 }

@@ -12,6 +12,10 @@ const TIERS = ['一线', '新一线', '二线', '三线', '四线', '五线'];
 const HOUSINGS = ['合租单间', '一居室整租', '已购房（还月供）', '免租'];
 const FOODS = ['节俭', '普通', '宽裕'];
 const INSURANCES = ['在职（单位缴）', '灵活就业（全自缴）', '不缴社保'];
+// breakdown key → 中文 label（overrides 弹窗用）
+const CAT_CN: Record<string, string> = {
+  '住房': '住房', '饮食': '饮食', '交通': '交通', '通讯日用': '通讯日用', '社保': '社保', '给老家': '给老家',
+};
 
 
 export default function SituationPage() {
@@ -171,7 +175,7 @@ export default function SituationPage() {
             <ScrollView scrollY className="ov-body">
               {Object.entries(ovVals).map(([k, v]) => (
                 <View className="ov-row" key={k}>
-                  <Text className="ov-label">{k}</Text>
+                  <Text className="ov-label">{CAT_CN[k] || k}</Text>
                   <Input className="ov-input" type="digit" value={v} onInput={(e) => setOvVals({ ...ovVals, [k]: e.detail.value })} />
                 </View>
               ))}

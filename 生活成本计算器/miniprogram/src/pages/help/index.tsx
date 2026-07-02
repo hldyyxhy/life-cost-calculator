@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, Button } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useShareAppMessage } from '@tarojs/taro';
 import { HELP_SCENARIOS, FRAUD_TYPES, buildHelpPrompt, buildAntifraudPrompt } from '../../core';
 import './index.scss';
 

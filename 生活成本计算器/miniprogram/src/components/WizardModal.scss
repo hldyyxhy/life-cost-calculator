@@ -32,3 +32,5 @@
   &::after { border: none; } }
 .wz-btn-next { flex: 2; background: $color-primary; color: #fff; border-radius: 48px; font-size: 32px; border: none;
   &::after { border: none; } }
+.wz-skip-link { display: block; text-align: center; color: $color-text-muted; font-size: 24px; margin-top: 16px; padding: 8px;
+  &:active { opacity: 0.5; } }
