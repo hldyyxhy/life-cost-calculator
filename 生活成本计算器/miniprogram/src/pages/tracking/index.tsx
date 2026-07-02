@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Button } from '@tarojs/components';
+import { View, Text, Button, ScrollView } from '@tarojs/components';
 import { useShareAppMessage } from '@tarojs/taro';
 import { metricsFrom, loadLastProfile } from '../../core';
 import { taroStorage } from '../../utils/storage';
