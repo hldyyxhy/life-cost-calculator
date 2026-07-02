@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { View, Text, Input, Picker, Button } from '@tarojs/components';
 import {
-  computeLoanApr, computeAffordableDebt, simulateDebtPayoff, simulateLoanSpiral, assessDebtHealth,
-  buildLoanAprPrompt, buildAffordableDebtPrompt, buildDebtPayoffPrompt, buildSpiralPrompt, buildDebtHealthPrompt,
+  computeLoanApr, compareLoanMethods, computeAffordableDebt, simulateDebtPayoff, simulateLoanSpiral, assessDebtHealth,
+  buildLoanAprPrompt, buildCompareMethodsPrompt, buildAffordableDebtPrompt, buildDebtPayoffPrompt, buildSpiralPrompt, buildDebtHealthPrompt,
 } from '../../core';
 import SubTabs from '../../components/SubTabs';
 import { fmtNum } from '../../utils/format';
@@ -12,7 +12,7 @@ import SmartNote from '../../components/SmartNote';
 import './index.scss';
 
 const lc = (l: string) => (l === '正常' ? 'good' : l === '偏高' ? 'warn' : 'bad');
-const TABS = ['①真实年化', '②可承受', '③雪球雪崩', '④以贷养贷', '⑤债务健康'];
+const TABS = ['①真实年化', '②还款对比', '③可承受', '④雪球雪崩', '⑤以贷养贷', '⑥债务健康'];
 const METHODS = ['雪球法（先还小额）', '雪崩法（先还高息）'];
 const MK = ['snowball', 'avalanche'];
 
@@ -24,6 +24,8 @@ export default function DebtPage() {
   const [monthly, setMonthly] = useState('900');
   const [periods, setPeriods] = useState('12');
   const [apr, setApr] = useState<any>(null);
+  const [cmpAprPct, setCmpAprPct] = useState('18');
+  const [cmpResult, setCmpResult] = useState<any>(null);
   const [surplus, setSurplus] = useState('2000');
   const [aprPct, setAprPct] = useState('18');
   const [periods2, setPeriods2] = useState('24');
@@ -88,6 +90,28 @@ export default function DebtPage() {
 
       {tab === 1 && (
         <View className="card calc">
+          <View className="calc-title">还款方式对比</View>
+          <View className="calc-desc">等额本息（房贷口径）vs 等本等息（消费分期固定手续费）。核心信息差：等本等息真实年化远高于名义。</View>
+          <View className="input-row"><Text className="label">借款本金</Text><Input className="input" type="digit" value={principal} onInput={(e) => setPrincipal(e.detail.value)} /><Text className="unit">元</Text></View>
+          <View className="input-row"><Text className="label">名义年化</Text><Input className="input" type="digit" value={cmpAprPct} onInput={(e) => setCmpAprPct(e.detail.value)} /><Text className="unit">%</Text></View>
+          <View className="input-row"><Text className="label">期数</Text><Input className="input" type="number" value={periods} onInput={(e) => setPeriods(e.detail.value)} /><Text className="unit">月</Text></View>
+          <Button className="btn-primary" onClick={() => { setCmpResult(compareLoanMethods(Number(principal) || 0, Number(cmpAprPct) || 0, Number(periods) || 0)); setPrompt(''); }}>对比</Button>
+          {cmpResult && !cmpResult.error && (
+            <View className="result-box">
+              <View className="info-row"><Text className="info-label">等额本息 真实年化</Text><Text className="info-val">{(cmpResult.equal_payment.annual_irr * 100).toFixed(1)}%</Text></View>
+              <View className="info-row"><Text className="info-label">等额本息 月供</Text><Text className="info-val">{fmtNum(cmpResult.equal_payment.monthly)} 元</Text></View>
+              <View className="info-row"><Text className="info-label">等本等息 真实年化</Text><Text className="info-val">{(cmpResult.equal_principal_flat.annual_irr * 100).toFixed(1)}%</Text></View>
+              <View className="info-row"><Text className="info-label">等本等息 月供</Text><Text className="info-val">{fmtNum(cmpResult.equal_principal_flat.monthly)} 元</Text></View>
+              <View className="info-row"><Text className="info-label">利息差</Text><Text className="info-val strong">{fmtNum(cmpResult.interest_diff)} 元</Text></View>
+              <SmartNote text={cmpResult.note} />
+              <Button className="btn-ask" onClick={() => setPrompt(buildCompareMethodsPrompt(Number(principal) || 0, Number(cmpAprPct) || 0, Number(periods) || 0))}>问 AI</Button>
+            </View>
+          )}
+        </View>
+      )}
+
+      {tab === 2 && (
+        <View className="card calc">
           <View className="calc-title">我能借多少</View>
           <View className="input-row"><Text className="label">每月结余</Text><Input className="input" type="digit" value={surplus} onInput={(e) => setSurplus(e.detail.value)} /><Text className="unit">元</Text></View>
           <View className="input-row"><Text className="label">名义年化</Text><Input className="input" type="digit" value={aprPct} onInput={(e) => setAprPct(e.detail.value)} /><Text className="unit">%</Text></View>
@@ -104,7 +128,7 @@ export default function DebtPage() {
         </View>
       )}
 
-      {tab === 2 && (
+      {tab === 3 && (
         <View className="card calc">
           <View className="calc-title">多笔债怎么还最快</View>
           <View className="calc-desc">输入你的债，模拟两种还法，看哪种省利息。</View>
@@ -158,7 +182,7 @@ export default function DebtPage() {
         </View>
       )}
 
-      {tab === 3 && (
+      {tab === 4 && (
         <View className="card calc">
           <View className="calc-title">以贷养贷会怎样</View>
           <View className="calc-desc">只还最低/借新还旧，债务怎么滚。</View>
@@ -179,7 +203,7 @@ export default function DebtPage() {
         </View>
       )}
 
-      {tab === 4 && (
+      {tab === 5 && (
         <View className="card calc">
           <View className="calc-title">债务健康检查</View>
           <View className="calc-desc">负债率/月供比/还清月数，一眼看有没有危险。</View>
