@@ -19,7 +19,7 @@ const fmtDiff = (a: number, b: number): string => {
   if (d === 0) return '—';
   return (d > 0 ? '+' : '') + fmtNum(d);
 };
-const TIERS = ['一线', '新一线', '二线', '三线', '四线', '五线'];
+import { TIERS } from '../../utils/constants';
 const HOUSINGS = ['合租单间', '一居室整租', '已购房（还月供）', '免租'];
 const FOODS = ['节俭', '普通', '宽裕'];
 const INSURANCES = ['在职（单位缴）', '灵活就业（全自缴）', '不缴社保'];

@@ -17,7 +17,7 @@ import { useShareAppMessage } from '@tarojs/taro';
 import PromptCard from '../../components/PromptCard';
 import './index.scss';
 
-const TIERS = ['一线', '新一线', '二线', '三线', '四线', '五线'];
+import { TIERS } from '../../utils/constants';
 const EVIDENCE = ['充分', '部分', '几乎没有'];
 const GRADES = ['1级', '2级', '3级', '4级', '5级', '6级', '7级', '8级', '9级', '10级'];
 const TABS = ['①加班费', '②最低工资', '③维权', '④失业金', '⑤工伤', '⑥4050', '⑦个税'];

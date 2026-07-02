@@ -10,7 +10,7 @@ import PromptCard from '../../components/PromptCard';
 import SmartNote from '../../components/SmartNote';
 import './index.scss';
 
-const TIERS = ['一线', '新一线', '二线', '三线', '四线', '五线'];
+import { TIERS } from '../../utils/constants';
 const LEVELS = ['普惠', '中产', '高端'];
 const CARE_MODES = ['居家养老', '普惠养老机构', '中高端养老机构'];
 const CARE_MAP: Record<string, string> = {
